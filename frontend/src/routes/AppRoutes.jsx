@@ -7,7 +7,8 @@ import Dashboard from '../pages/jobseeker/Dashboard';
 import Jobs from '../pages/jobseeker/Jobs';
 import JobDetails from '../pages/jobseeker/JobDetails';
 import MyApplications from '../pages/jobseeker/MyApplications';
-import ProfilePlaceholder from '../pages/jobseeker/ProfilePlaceholder';
+import Profile from '../pages/jobseeker/Profile';
+import EditProfile from '../pages/jobseeker/EditProfile';
 import RecruiterDashboard from '../pages/dashboards/RecruiterDashboard';
 import AdminDashboard from '../pages/dashboards/AdminDashboard';
 import ProtectedRoute from './ProtectedRoute';
@@ -52,7 +53,8 @@ const AppRoutes = () => {
             <Route path="/job-seeker/jobs" element={<Navigate to="/jobs" replace />} />
             <Route path="/job-seeker/jobs/:id" element={<JobDetails />} />
             <Route path="/job-seeker/applications" element={<MyApplications />} />
-            <Route path="/job-seeker/profile" element={<ProfilePlaceholder />} />
+            <Route path="/job-seeker/profile" element={<Profile />} />
+            <Route path="/job-seeker/profile/edit" element={<EditProfile />} />
           </Route>
         </Route>
 
