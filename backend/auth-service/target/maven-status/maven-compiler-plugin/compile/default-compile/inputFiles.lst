@@ -1,0 +1,16 @@
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\AuthServiceApplication.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\controller\AuthController.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\AuthResponse.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\LoginRequest.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\RegisterRequest.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\UserDto.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\entity\Role.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\entity\User.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\exception\GlobalExceptionHandler.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\exception\InvalidCredentialsException.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\exception\UserAlreadyExistsException.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\repository\UserRepository.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\JwtAuthenticationFilter.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\JwtService.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\SecurityConfig.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\service\AuthService.java
