@@ -97,15 +97,17 @@ const Login = () => {
     if (!validate()) return;
 
     setSubmitting(true);
+    setErrors({});
+
     try {
-      // Mock login via AuthContext
-      const user = await login(formData.email, formData.password, formData.role);
+      // Call Auth Service API via AuthContext
+      const user = await login(formData.email, formData.password);
 
       // Determine destination based on user role or redirect location state
       const fromPath = location.state?.from?.pathname;
       let targetPath = fromPath;
       if (!targetPath || targetPath === '/login' || targetPath === '/') {
-        switch (user.role) {
+        switch (user.role?.toUpperCase()) {
           case 'RECRUITER':
             targetPath = '/recruiter';
             break;
@@ -120,7 +122,8 @@ const Login = () => {
       navigate(targetPath, { replace: true });
     } catch (err) {
       console.error('Login error:', err);
-      setErrors({ general: 'Authentication failed. Please check your credentials.' });
+      const backendMsg = err.response?.data?.message || 'Invalid email or password. Please check your credentials.';
+      setErrors({ general: backendMsg });
     } finally {
       setSubmitting(false);
     }
@@ -257,7 +260,7 @@ const Login = () => {
 
         <div className="auth-security-note">
           <ShieldCheck size={14} style={{ marginRight: 6 }} />
-          <span>TalentPulse Secure Portal — Phase 2 Demo</span>
+          <span>TalentPulse Secure Portal — Phase 5 Integration</span>
         </div>
       </div>
     </div>

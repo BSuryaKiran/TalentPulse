@@ -1,7 +1,18 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
-import { Eye, EyeOff, Lock, Mail, User, Briefcase, ArrowRight, UserCheck, Building2 } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  User,
+  Briefcase,
+  ArrowRight,
+  UserCheck,
+  Building2,
+  CheckCircle2,
+} from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -19,6 +30,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const validate = () => {
     const newErrors = {};
@@ -68,20 +80,31 @@ const Register = () => {
     if (!validate()) return;
 
     setSubmitting(true);
+    setErrors({});
+    setSuccessMessage('');
+
     try {
-      // Register mock user
-      const user = await register(
+      // Register via Auth Service API
+      await register(
         formData.fullName,
         formData.email,
+        formData.password,
         formData.role
       );
 
-      // Navigate to corresponding role dashboard
-      const targetPath = user.role === 'RECRUITER' ? '/recruiter' : '/job-seeker';
-      navigate(targetPath, { replace: true });
+      setSuccessMessage('Account registered successfully! Redirecting to login...');
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 1200);
     } catch (err) {
       console.error('Registration error:', err);
-      setErrors({ general: 'Registration failed. Please try again.' });
+      const backendMsg = err.response?.data?.message || err.response?.data?.error || 'Registration failed. Please try again.';
+      const fieldErrors = err.response?.data?.errors;
+      if (fieldErrors && typeof fieldErrors === 'object') {
+        setErrors(fieldErrors);
+      } else {
+        setErrors({ general: backendMsg });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -98,8 +121,17 @@ const Register = () => {
           <p className="auth-subtitle">Join the enterprise recruitment network</p>
         </div>
 
+        {successMessage && (
+          <div className="alert alert-success-banner mb-3">
+            <div className="alert-content">
+              <CheckCircle2 size={18} className="alert-icon" />
+              <span>{successMessage}</span>
+            </div>
+          </div>
+        )}
+
         {errors.general && (
-          <div className="alert alert-error">
+          <div className="alert alert-error mb-3">
             <span>{errors.general}</span>
           </div>
         )}
@@ -264,4 +296,3 @@ const Register = () => {
 };
 
 export default Register;
-

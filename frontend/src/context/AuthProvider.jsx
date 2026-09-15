@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
+import authService from '../services/authService';
 
 export const AuthProvider = ({ children }) => {
-  // Lazy state initialization from localStorage to avoid set-state-in-effect
+  // Lazy state initialization from localStorage
   const [user, setUser] = useState(() => {
     try {
       const storedUser = localStorage.getItem('tp_user');
@@ -13,40 +14,84 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(() => {
+    return Boolean(localStorage.getItem('tp_auth_token'));
+  });
 
-  // Mock login handler for Phase 1 UI prototyping
-  const login = async (email, password, role = 'JOB_SEEKER') => {
-    const mockUser = {
-      id: 'usr_' + Date.now(),
-      email: email.toLowerCase().trim(),
-      name: email.split('@')[0].replace('.', ' '),
-      role: role.toUpperCase(), // 'JOB_SEEKER', 'RECRUITER', or 'ADMIN'
+  // Validate stored token on app startup if present
+  useEffect(() => {
+    const token = localStorage.getItem('tp_auth_token');
+    if (token) {
+      authService
+        .getCurrentUser()
+        .then((userData) => {
+          const formattedUser = {
+            id: userData.userId,
+            name: userData.fullName,
+            email: userData.email,
+            role: userData.role,
+          };
+          setUser(formattedUser);
+          localStorage.setItem('tp_user', JSON.stringify(formattedUser));
+        })
+        .catch((err) => {
+          console.warn('Failed to restore authentication session:', err);
+          authService.logout();
+          setUser(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, []); // Run once on startup
+
+  // Real login handler calling Auth Service API
+  const login = async (email, password) => {
+    const response = await authService.login({ email, password });
+
+    const authUser = {
+      id: response.userId,
+      name: response.fullName,
+      email: response.email,
+      role: response.role,
     };
 
-    setUser(mockUser);
-    localStorage.setItem('tp_user', JSON.stringify(mockUser));
-    return mockUser;
+    localStorage.setItem('tp_auth_token', response.token);
+    localStorage.setItem('tp_user', JSON.stringify(authUser));
+
+    setUser(authUser);
+    return authUser;
   };
 
-  // Mock register handler
-  const register = async (name, email, role) => {
-    const mockUser = {
-      id: 'usr_' + Date.now(),
-      email: email.toLowerCase().trim(),
-      name: name.trim(),
-      role: role.toUpperCase(), // 'JOB_SEEKER' or 'RECRUITER'
+  // Real register handler calling Auth Service API
+  const register = async (fullName, email, password, role) => {
+    const response = await authService.register({
+      fullName,
+      email,
+      password,
+      role,
+    });
+
+    const authUser = {
+      id: response.userId,
+      name: response.fullName,
+      email: response.email,
+      role: response.role,
     };
 
-    setUser(mockUser);
-    localStorage.setItem('tp_user', JSON.stringify(mockUser));
-    return mockUser;
+    if (response.token) {
+      localStorage.setItem('tp_auth_token', response.token);
+      localStorage.setItem('tp_user', JSON.stringify(authUser));
+      setUser(authUser);
+    }
+
+    return authUser;
   };
 
+  // Real logout handler
   const logout = () => {
+    authService.logout();
     setUser(null);
-    localStorage.removeItem('tp_user');
-    localStorage.removeItem('tp_auth_token');
   };
 
   const value = {
@@ -61,3 +106,4 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+export default AuthProvider;

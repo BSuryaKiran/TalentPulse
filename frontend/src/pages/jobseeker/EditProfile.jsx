@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/useAuth';
 import { getProfile, saveProfile } from '../../data/profile';
+import profileService from '../../services/profileService';
 import SkillsList from '../../components/profile/SkillsList';
 import EducationList from '../../components/profile/EducationList';
 import ExperienceList from '../../components/profile/ExperienceList';
@@ -8,6 +10,7 @@ import { Save, X, ArrowLeft, CheckCircle2, User, Mail, Phone, MapPin } from 'luc
 
 const EditProfile = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [profileData, setProfileData] = useState(getProfile);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -93,7 +96,7 @@ const EditProfile = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -101,15 +104,32 @@ const EditProfile = () => {
     }
 
     setSaving(true);
-    setTimeout(() => {
-      saveProfile(profileData);
+    setErrors({});
+
+    try {
+      // Attempt to save to Profile Service API
+      if (user?.id) {
+        try {
+          await profileService.updateProfile(user.id, profileData);
+        } catch {
+          // If Profile Service backend is pending, save to local session store
+          saveProfile(profileData);
+        }
+      } else {
+        saveProfile(profileData);
+      }
+
       setSaving(false);
       setSaveSuccess(true);
 
       setTimeout(() => {
         navigate('/job-seeker/profile');
       }, 1000);
-    }, 400);
+    } catch (err) {
+      console.error('Save profile error:', err);
+      setSaving(false);
+      setErrors({ general: 'Failed to save profile changes. Please try again.' });
+    }
   };
 
   return (
@@ -264,7 +284,7 @@ const EditProfile = () => {
           </Link>
           <button type="submit" disabled={saving} className="btn btn-primary btn-lg">
             <Save size={18} style={{ marginRight: 6 }} />
-            {saving ? 'Saving Changes...' : 'Save Profile'}
+            {saving ? 'Saving...' : 'Save Profile'}
           </button>
         </div>
       </form>
