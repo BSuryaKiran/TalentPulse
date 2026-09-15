@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import JobSeekerLayout from '../layouts/JobSeekerLayout';
+import Landing from '../pages/Landing';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import Dashboard from '../pages/jobseeker/Dashboard';
@@ -13,29 +14,13 @@ import RecruiterDashboard from '../pages/dashboards/RecruiterDashboard';
 import AdminDashboard from '../pages/dashboards/AdminDashboard';
 import ProtectedRoute from './ProtectedRoute';
 import RoleRoute from './RoleRoute';
-import { useAuth } from '../context/useAuth';
-
-// Smart home component redirecting based on authentication state
-const HomeRedirect = () => {
-  const { user, isAuthenticated } = useAuth();
-
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  switch (user.role?.toUpperCase()) {
-    case 'RECRUITER':
-      return <Navigate to="/recruiter" replace />;
-    case 'ADMIN':
-      return <Navigate to="/admin" replace />;
-    default:
-      return <Navigate to="/job-seeker/dashboard" replace />;
-  }
-};
 
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Public Landing Page */}
+      <Route path="/" element={<Landing />} />
+
       {/* Public Authentication Routes using MainLayout */}
       <Route element={<MainLayout />}>
         <Route path="/login" element={<Login />} />
@@ -80,8 +65,7 @@ const AppRoutes = () => {
         </Route>
       </Route>
 
-      {/* Home & Fallback Routes */}
-      <Route path="/" element={<HomeRedirect />} />
+      {/* Fallback Route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

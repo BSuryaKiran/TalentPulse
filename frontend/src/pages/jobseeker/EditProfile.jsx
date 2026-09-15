@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { getProfile, saveProfile } from '../../data/profile';
@@ -6,15 +6,35 @@ import profileService from '../../services/profileService';
 import SkillsList from '../../components/profile/SkillsList';
 import EducationList from '../../components/profile/EducationList';
 import ExperienceList from '../../components/profile/ExperienceList';
-import { Save, X, ArrowLeft, CheckCircle2, User, Mail, Phone, MapPin } from 'lucide-react';
+import { downloadResumePdf } from '../../utils/resumeDownloader';
+import {
+  Save,
+  X,
+  ArrowLeft,
+  CheckCircle2,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  FileText,
+  Upload,
+  Download,
+  Trash2,
+  Plus,
+} from 'lucide-react';
 
 const EditProfile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [profileData, setProfileData] = useState(getProfile);
+  const { user, updateUser } = useAuth();
+  const [profileData, setProfileData] = useState(() => getProfile(user));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [resumeNotice, setResumeNotice] = useState('');
+
+  useEffect(() => {
+    setProfileData(getProfile(user));
+  }, [user]);
 
   // Form field change handler
   const handleChange = (e) => {
@@ -23,6 +43,30 @@ const EditProfile = () => {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
+  };
+
+  // Resume handlers
+  const handleResumeFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const newResume = {
+        fileName: file.name,
+        status: 'Uploaded & Active',
+        lastUploaded: new Date().toISOString().split('T')[0],
+        fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      };
+      setProfileData((prev) => ({ ...prev, resume: newResume }));
+      setResumeNotice(`Uploaded "${file.name}" (will be saved with profile).`);
+    }
+  };
+
+  const handleRemoveResume = () => {
+    setProfileData((prev) => ({ ...prev, resume: null }));
+    setResumeNotice('Resume removed. You can upload a new resume anytime.');
+  };
+
+  const handleDownloadResume = () => {
+    downloadResumePdf(profileData);
   };
 
   // Skills handlers
@@ -112,11 +156,19 @@ const EditProfile = () => {
         try {
           await profileService.updateProfile(user.id, profileData);
         } catch {
-          // If Profile Service backend is pending, save to local session store
-          saveProfile(profileData);
+          // If Profile Service backend is pending, save to local storage
+          saveProfile(profileData, user);
         }
       } else {
-        saveProfile(profileData);
+        saveProfile(profileData, user);
+      }
+
+      // Synchronize updated name and email in global auth context (sidebar, topbar, dashboard)
+      if (updateUser && profileData.fullName) {
+        updateUser({
+          name: profileData.fullName,
+          email: profileData.email || user?.email,
+        });
       }
 
       setSaving(false);
@@ -124,7 +176,7 @@ const EditProfile = () => {
 
       setTimeout(() => {
         navigate('/job-seeker/profile');
-      }, 1000);
+      }, 900);
     } catch (err) {
       console.error('Save profile error:', err);
       setSaving(false);
@@ -250,6 +302,95 @@ const EditProfile = () => {
               className="form-textarea"
             />
           </div>
+        </div>
+
+        {/* Resume & Documents Section */}
+        <div className="profile-section-card">
+          <div className="section-card-header">
+            <div className="section-title-with-icon">
+              <FileText size={20} className="section-icon" />
+              <h2>Resume & Documents</h2>
+            </div>
+          </div>
+
+          {profileData.resume ? (
+            <div className="resume-box">
+              <div className="resume-info-left">
+                <div className="resume-file-icon">
+                  <FileText size={28} />
+                </div>
+                <div className="resume-details">
+                  <h3 className="resume-filename">{profileData.resume.fileName}</h3>
+                  <p className="resume-meta">
+                    <span>Size: {profileData.resume.fileSize || '1.2 MB'}</span> •{' '}
+                    <span>Last updated: {profileData.resume.lastUploaded || 'Recent'}</span>
+                  </p>
+                  <div className="resume-status-badge mt-1">
+                    <CheckCircle2 size={13} style={{ marginRight: 4 }} />
+                    <span>{profileData.resume.status || 'Active'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="resume-actions-right">
+                <button
+                  type="button"
+                  onClick={handleDownloadResume}
+                  className="btn btn-outline btn-sm"
+                  title="Download / Print Resume PDF"
+                >
+                  <Download size={15} style={{ marginRight: 6 }} />
+                  <span>Download PDF</span>
+                </button>
+
+                <label className="btn btn-outline btn-sm upload-resume-label">
+                  <Upload size={15} style={{ marginRight: 6 }} />
+                  <span>Replace</span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleResumeFileChange}
+                    className="visually-hidden"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleRemoveResume}
+                  className="btn btn-outline btn-sm text-danger"
+                  title="Remove Resume"
+                >
+                  <Trash2 size={15} style={{ marginRight: 4 }} />
+                  <span>Remove</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-section-card text-center">
+              <div className="empty-section-icon">
+                <FileText size={32} />
+              </div>
+              <p className="empty-section-text">No resume uploaded.</p>
+              <p className="empty-section-sub">Upload a PDF or Word document for instant job applications.</p>
+              <label className="btn btn-primary btn-sm mt-2 upload-resume-label" style={{ display: 'inline-flex' }}>
+                <Plus size={16} style={{ marginRight: 6 }} />
+                <span>Upload Resume</span>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleResumeFileChange}
+                  className="visually-hidden"
+                />
+              </label>
+            </div>
+          )}
+
+          {resumeNotice && (
+            <div className="alert alert-info mt-3" style={{ fontSize: '0.8rem', padding: '0.5rem 0.85rem' }}>
+              <CheckCircle2 size={14} style={{ marginRight: 6, color: '#10b981' }} />
+              <span>{resumeNotice}</span>
+            </div>
+          )}
         </div>
 
         {/* Skills Section Editor */}

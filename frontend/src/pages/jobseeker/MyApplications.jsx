@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/useAuth';
 import { getApplications } from '../../data/applications';
 import JobStatusBadge from '../../components/job/JobStatusBadge';
 import {
@@ -12,9 +13,14 @@ import {
 } from 'lucide-react';
 
 const MyApplications = () => {
-  const [applications] = useState(getApplications);
+  const { user } = useAuth();
+  const [applications, setApplications] = useState(() => getApplications(user?.email));
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  useEffect(() => {
+    setApplications(getApplications(user?.email));
+  }, [user?.email]);
 
   const statusOptions = [
     { label: 'All Applications', value: 'ALL' },

@@ -56,21 +56,49 @@ export const INITIAL_APPLICATIONS = [
   },
 ];
 
-export const getApplications = () => {
-  const stored = localStorage.getItem('tp_mock_applications');
+const resolveUserEmail = (userEmail) => {
+  if (userEmail && typeof userEmail === 'string') {
+    return userEmail.toLowerCase().trim();
+  }
+  try {
+    const storedUser = localStorage.getItem('tp_user');
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (parsed?.email) return parsed.email.toLowerCase().trim();
+    }
+  } catch {
+    // ignore
+  }
+  return 'seeker@talentpulse.com';
+};
+
+const getStorageKey = (email) => `tp_apps_${email}`;
+
+export const getApplications = (userEmail) => {
+  const email = resolveUserEmail(userEmail);
+  const isDemo = email === 'seeker@talentpulse.com' || email.includes('demo');
+  const storageKey = getStorageKey(email);
+
+  const stored = localStorage.getItem(storageKey);
   if (stored) {
     try {
       return JSON.parse(stored);
     } catch {
-      return INITIAL_APPLICATIONS;
+      return isDemo ? INITIAL_APPLICATIONS : [];
     }
   }
-  localStorage.setItem('tp_mock_applications', JSON.stringify(INITIAL_APPLICATIONS));
-  return INITIAL_APPLICATIONS;
+
+  // Demo user gets initial mock applications; new signups start with empty applications list
+  const initialData = isDemo ? INITIAL_APPLICATIONS : [];
+  localStorage.setItem(storageKey, JSON.stringify(initialData));
+  return initialData;
 };
 
-export const addApplication = (applicationData) => {
-  const currentApps = getApplications();
+export const addApplication = (applicationData, userEmail) => {
+  const email = resolveUserEmail(userEmail);
+  const storageKey = getStorageKey(email);
+  const currentApps = getApplications(email);
+
   const newApp = {
     id: 'app-' + Date.now(),
     appliedDate: new Date().toISOString().split('T')[0],
@@ -80,11 +108,13 @@ export const addApplication = (applicationData) => {
   };
 
   const updated = [newApp, ...currentApps];
-  localStorage.setItem('tp_mock_applications', JSON.stringify(updated));
+  localStorage.setItem(storageKey, JSON.stringify(updated));
   return newApp;
 };
 
-export const hasUserApplied = (jobId) => {
-  const currentApps = getApplications();
+export const hasUserApplied = (jobId, userEmail) => {
+  const email = resolveUserEmail(userEmail);
+  const currentApps = getApplications(email);
   return currentApps.some((app) => app.jobId === jobId);
 };
+

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { getJobs } from '../../data/jobs';
@@ -20,7 +20,12 @@ import {
 const Dashboard = () => {
   const { user } = useAuth();
   const [jobs] = useState(getJobs);
-  const [applications] = useState(getApplications);
+  const [applications, setApplications] = useState(() => getApplications(user?.email));
+
+  // Sync applications when user changes
+  useEffect(() => {
+    setApplications(getApplications(user?.email));
+  }, [user?.email]);
 
   // Compute stat counts dynamically
   const totalJobsCount = jobs.length;

@@ -11,7 +11,7 @@ import { Info } from 'lucide-react';
 
 const Profile = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState(getProfile);
+  const [profile, setProfile] = useState(() => getProfile(user));
   const [loading, setLoading] = useState(() => Boolean(user?.id));
   const [apiNotice, setApiNotice] = useState('');
 
@@ -28,27 +28,28 @@ const Profile = () => {
         })
         .catch(() => {
           if (isMounted) {
-            // Profile Service backend is pending implementation by the team
-            setApiNotice('Profile Service backend integration pending. Displaying active candidate profile.');
-            setProfile(getProfile());
+            setProfile(getProfile(user));
           }
         })
         .finally(() => {
           if (isMounted) setLoading(false);
         });
+    } else {
+      setProfile(getProfile(user));
+      setLoading(false);
     }
 
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user]);
 
   const handleUpdateResume = (newResumeData) => {
     const updated = {
       ...profile,
       resume: newResumeData,
     };
-    saveProfile(updated);
+    saveProfile(updated, user);
     setProfile(updated);
   };
 
@@ -72,7 +73,7 @@ const Profile = () => {
       <ProfileHeader profile={profile} isEditMode={false} />
 
       <div className="profile-body-sections">
-        <ResumeSection resume={profile.resume} onUpdateResume={handleUpdateResume} />
+        <ResumeSection resume={profile.resume} profile={profile} onUpdateResume={handleUpdateResume} />
         <SkillsList skills={profile.skills || []} isEditMode={false} />
         <ExperienceList experience={profile.experience || []} isEditMode={false} />
         <EducationList education={profile.education || []} isEditMode={false} />

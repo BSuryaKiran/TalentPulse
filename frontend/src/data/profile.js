@@ -63,20 +63,78 @@ export const INITIAL_PROFILE = {
   },
 };
 
-export const getProfile = () => {
-  const stored = localStorage.getItem('tp_mock_profile');
+const resolveUserInfo = (userOrEmail) => {
+  let email = '';
+  let name = '';
+
+  if (typeof userOrEmail === 'string') {
+    email = userOrEmail.toLowerCase().trim();
+  } else if (userOrEmail && typeof userOrEmail === 'object') {
+    email = (userOrEmail.email || '').toLowerCase().trim();
+    name = userOrEmail.name || userOrEmail.fullName || '';
+  }
+
+  if (!email) {
+    try {
+      const storedUser = localStorage.getItem('tp_user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        email = (parsed?.email || '').toLowerCase().trim();
+        name = parsed?.name || parsed?.fullName || '';
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return {
+    email: email || 'seeker@talentpulse.com',
+    name: name,
+  };
+};
+
+const getProfileStorageKey = (email) => `tp_profile_${email}`;
+
+export const getProfile = (userOrEmail) => {
+  const { email, name } = resolveUserInfo(userOrEmail);
+  const isDemo = email === 'seeker@talentpulse.com' || email.includes('demo');
+  const storageKey = getProfileStorageKey(email);
+
+  const stored = localStorage.getItem(storageKey);
   if (stored) {
     try {
       return JSON.parse(stored);
     } catch {
-      return INITIAL_PROFILE;
+      // fallback
     }
   }
-  localStorage.setItem('tp_mock_profile', JSON.stringify(INITIAL_PROFILE));
-  return INITIAL_PROFILE;
+
+  if (isDemo) {
+    localStorage.setItem(storageKey, JSON.stringify(INITIAL_PROFILE));
+    return INITIAL_PROFILE;
+  }
+
+  // Newly registered user: clean profile with only signup name & email
+  const newProfile = {
+    fullName: name || '',
+    email: email,
+    phone: '',
+    location: '',
+    summary: '',
+    skills: [],
+    education: [],
+    experience: [],
+    resume: null,
+  };
+
+  localStorage.setItem(storageKey, JSON.stringify(newProfile));
+  return newProfile;
 };
 
-export const saveProfile = (updatedProfile) => {
-  localStorage.setItem('tp_mock_profile', JSON.stringify(updatedProfile));
+export const saveProfile = (updatedProfile, userOrEmail) => {
+  const { email } = resolveUserInfo(userOrEmail || updatedProfile);
+  const storageKey = getProfileStorageKey(email);
+  localStorage.setItem(storageKey, JSON.stringify(updatedProfile));
   return updatedProfile;
 };
+

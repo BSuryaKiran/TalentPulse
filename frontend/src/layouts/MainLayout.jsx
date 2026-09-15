@@ -11,7 +11,7 @@ const MainLayout = () => {
       <footer className="app-footer">
         <div className="footer-content">
           <p>
-            &copy; {new Date().getFullYear()} <strong>TalentPulse</strong> – Enterprise Talent Acquisition & Job Application Tracking Portal.
+            &copy; {new Date().getFullYear()} <strong>TalentPulse</strong> &mdash; Enterprise Talent Acquisition &amp; Job Application Tracking Portal.
           </p>
         </div>
       </footer>
@@ -20,4 +20,3 @@ const MainLayout = () => {
 };
 
 export default MainLayout;
-

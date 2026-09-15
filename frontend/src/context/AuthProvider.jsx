@@ -4,8 +4,16 @@ import authService from '../services/authService';
 
 export const AuthProvider = ({ children }) => {
   // Lazy state initialization from localStorage
+  // BUT: demo tokens (prefixed 'demo-') are session-only — don't restore on reload
   const [user, setUser] = useState(() => {
     try {
+      const token = localStorage.getItem('tp_auth_token');
+      // If the stored token is a demo token, clear it — don't restore across page reloads
+      if (token && token.startsWith('demo-')) {
+        localStorage.removeItem('tp_auth_token');
+        localStorage.removeItem('tp_user');
+        return null;
+      }
       const storedUser = localStorage.getItem('tp_user');
       return storedUser ? JSON.parse(storedUser) : null;
     } catch (e) {
@@ -15,13 +23,15 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [loading, setLoading] = useState(() => {
-    return Boolean(localStorage.getItem('tp_auth_token'));
+    const token = localStorage.getItem('tp_auth_token');
+    // Only show loading spinner if a real (non-demo) token exists
+    return Boolean(token && !token.startsWith('demo-'));
   });
 
-  // Validate stored token on app startup if present
+  // Validate stored real token on app startup
   useEffect(() => {
     const token = localStorage.getItem('tp_auth_token');
-    if (token) {
+    if (token && !token.startsWith('demo-')) {
       authService
         .getCurrentUser()
         .then((userData) => {
@@ -43,9 +53,8 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
         });
     }
-  }, []); // Run once on startup
+  }, []);
 
-  // Real login handler calling Auth Service API
   const login = async (email, password) => {
     const response = await authService.login({ email, password });
 
@@ -63,7 +72,6 @@ export const AuthProvider = ({ children }) => {
     return authUser;
   };
 
-  // Real register handler calling Auth Service API
   const register = async (fullName, email, password, role) => {
     const response = await authService.register({
       fullName,
@@ -88,7 +96,19 @@ export const AuthProvider = ({ children }) => {
     return authUser;
   };
 
-  // Real logout handler
+  const updateUser = (updatedFields) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updatedFields };
+      try {
+        localStorage.setItem('tp_user', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to update tp_user in localStorage:', e);
+      }
+      return updated;
+    });
+  };
+
   const logout = () => {
     authService.logout();
     setUser(null);
@@ -100,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    updateUser,
     logout,
   };
 

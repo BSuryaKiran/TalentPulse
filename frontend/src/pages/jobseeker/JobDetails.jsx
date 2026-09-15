@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/useAuth';
 import { getJobById } from '../../data/jobs';
 import { addApplication, hasUserApplied, getApplications } from '../../data/applications';
+import { getProfile } from '../../data/profile';
 import JobStatusBadge from '../../components/job/JobStatusBadge';
 import {
   ArrowLeft,
@@ -22,12 +24,13 @@ import {
 const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [job] = useState(() => getJobById(id));
-  const [alreadyApplied, setAlreadyApplied] = useState(() => (id ? hasUserApplied(id) : false));
+  const [alreadyApplied, setAlreadyApplied] = useState(() => (id ? hasUserApplied(id, user?.email) : false));
   const [existingAppStatus, setExistingAppStatus] = useState(() => {
     if (!id) return null;
-    const apps = getApplications();
+    const apps = getApplications(user?.email);
     const myApp = apps.find((a) => a.jobId === id);
     return myApp ? myApp.status : null;
   });
@@ -35,7 +38,10 @@ const JobDetails = () => {
   // Application Modal state
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [coverNotes, setCoverNotes] = useState('');
-  const [resumeName, setResumeName] = useState('My_Updated_Resume_2026.pdf');
+  const [resumeName, setResumeName] = useState(() => {
+    const p = getProfile(user);
+    return p?.resume?.fileName || `${(user?.name || 'My').replace(/\s+/g, '_')}_Resume_2026.pdf`;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [applicationSuccess, setApplicationSuccess] = useState(false);
 
@@ -53,7 +59,7 @@ const JobDetails = () => {
         employmentType: job.employmentType,
         resumeName: resumeName,
         notes: coverNotes || 'Standard application submitted via TalentPulse portal.',
-      });
+      }, user?.email);
 
       setSubmitting(false);
       setAlreadyApplied(true);
