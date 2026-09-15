@@ -1,8 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
+import JobSeekerLayout from '../layouts/JobSeekerLayout';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
-import JobSeekerDashboard from '../pages/dashboards/JobSeekerDashboard';
+import Dashboard from '../pages/jobseeker/Dashboard';
+import Jobs from '../pages/jobseeker/Jobs';
+import JobDetails from '../pages/jobseeker/JobDetails';
+import MyApplications from '../pages/jobseeker/MyApplications';
+import ProfilePlaceholder from '../pages/jobseeker/ProfilePlaceholder';
 import RecruiterDashboard from '../pages/dashboards/RecruiterDashboard';
 import AdminDashboard from '../pages/dashboards/AdminDashboard';
 import ProtectedRoute from './ProtectedRoute';
@@ -23,28 +28,36 @@ const HomeRedirect = () => {
     case 'ADMIN':
       return <Navigate to="/admin" replace />;
     default:
-      return <Navigate to="/job-seeker" replace />;
+      return <Navigate to="/job-seeker/dashboard" replace />;
   }
 };
 
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Public Authentication Routes using MainLayout */}
       <Route element={<MainLayout />}>
-        {/* Public Authentication Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+      </Route>
 
-        {/* Protected Dashboard Routes with Role-Based Access */}
-        <Route element={<ProtectedRoute />}>
-          <Route
-            path="/job-seeker"
-            element={
-              <RoleRoute allowedRoles={['JOB_SEEKER']}>
-                <JobSeekerDashboard />
-              </RoleRoute>
-            }
-          />
+      {/* Protected Job Seeker Portal Routes using JobSeekerLayout */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<RoleRoute allowedRoles={['JOB_SEEKER']} />}>
+          <Route element={<JobSeekerLayout />}>
+            <Route path="/job-seeker" element={<Navigate to="/job-seeker/dashboard" replace />} />
+            <Route path="/job-seeker/dashboard" element={<Dashboard />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/:id" element={<JobDetails />} />
+            <Route path="/job-seeker/jobs" element={<Navigate to="/jobs" replace />} />
+            <Route path="/job-seeker/jobs/:id" element={<JobDetails />} />
+            <Route path="/job-seeker/applications" element={<MyApplications />} />
+            <Route path="/job-seeker/profile" element={<ProfilePlaceholder />} />
+          </Route>
+        </Route>
+
+        {/* Recruiter Workspace Placeholder */}
+        <Route element={<MainLayout />}>
           <Route
             path="/recruiter"
             element={
@@ -53,6 +66,7 @@ const AppRoutes = () => {
               </RoleRoute>
             }
           />
+          {/* Admin Workspace Placeholder */}
           <Route
             path="/admin"
             element={
@@ -62,14 +76,13 @@ const AppRoutes = () => {
             }
           />
         </Route>
-
-        {/* Home & Fallback Routes */}
-        <Route path="/" element={<HomeRedirect />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
+
+      {/* Home & Fallback Routes */}
+      <Route path="/" element={<HomeRedirect />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
 
 export default AppRoutes;
-

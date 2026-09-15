@@ -1,7 +1,43 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
-import { Eye, EyeOff, Lock, Mail, Briefcase, ArrowRight, ShieldCheck } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Briefcase,
+  ArrowRight,
+  ShieldCheck,
+  Zap,
+  UserCheck,
+  Building2,
+  Shield,
+} from 'lucide-react';
+
+const DEMO_CREDENTIALS = {
+  JOB_SEEKER: {
+    email: 'seeker@talentpulse.com',
+    password: 'password123',
+    role: 'JOB_SEEKER',
+    label: 'Job Seeker',
+    icon: <UserCheck size={16} />,
+  },
+  RECRUITER: {
+    email: 'recruiter@talentpulse.com',
+    password: 'password123',
+    role: 'RECRUITER',
+    label: 'Recruiter',
+    icon: <Building2 size={16} />,
+  },
+  ADMIN: {
+    email: 'admin@talentpulse.com',
+    password: 'password123',
+    role: 'ADMIN',
+    label: 'Admin',
+    icon: <Shield size={16} />,
+  },
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -9,14 +45,26 @@ const Login = () => {
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: 'seeker@talentpulse.com',
+    password: 'password123',
     role: 'JOB_SEEKER',
   });
 
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const fillDemoCredentials = (roleKey) => {
+    const creds = DEMO_CREDENTIALS[roleKey];
+    if (creds) {
+      setFormData({
+        email: creds.email,
+        password: creds.password,
+        role: creds.role,
+      });
+      setErrors({});
+    }
+  };
 
   const validate = () => {
     const newErrors = {};
@@ -52,7 +100,7 @@ const Login = () => {
     try {
       // Mock login via AuthContext
       const user = await login(formData.email, formData.password, formData.role);
-      
+
       // Determine destination based on user role or redirect location state
       const fromPath = location.state?.from?.pathname;
       let targetPath = fromPath;
@@ -65,7 +113,7 @@ const Login = () => {
             targetPath = '/admin';
             break;
           default:
-            targetPath = '/job-seeker';
+            targetPath = '/job-seeker/dashboard';
             break;
         }
       }
@@ -89,30 +137,52 @@ const Login = () => {
           <p className="auth-subtitle">Sign in to your enterprise account</p>
         </div>
 
-        {/* Role Concept Switcher (Phase 1 Prototyping) */}
+        {/* Demo Credentials Section */}
         <div className="role-selector-group">
-          <label className="role-selector-label">Login Persona (Demo):</label>
+          <div className="demo-header-row">
+            <span className="role-selector-label">Auto-Fill Demo Credentials:</span>
+            <span className="demo-badge">
+              <Zap size={12} style={{ marginRight: 4 }} />
+              Quick Demo
+            </span>
+          </div>
+
           <div className="role-tabs">
+            {Object.keys(DEMO_CREDENTIALS).map((key) => {
+              const cred = DEMO_CREDENTIALS[key];
+              const isActive = formData.role === cred.role;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => fillDemoCredentials(key)}
+                  className={`role-tab ${isActive ? 'active' : ''}`}
+                  title={`Click to fill demo credentials for ${cred.label}`}
+                >
+                  <span className="tab-icon">{cred.icon}</span>
+                  <span>{cred.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Demo Credentials Info Card */}
+          <div className="demo-creds-preview">
+            <div className="dcp-row">
+              <span className="dcp-label">Demo Email:</span>
+              <span className="dcp-value">{DEMO_CREDENTIALS[formData.role]?.email}</span>
+            </div>
+            <div className="dcp-row">
+              <span className="dcp-label">Demo Password:</span>
+              <span className="dcp-value">{DEMO_CREDENTIALS[formData.role]?.password}</span>
+            </div>
             <button
               type="button"
-              className={`role-tab ${formData.role === 'JOB_SEEKER' ? 'active' : ''}`}
-              onClick={() => setFormData((prev) => ({ ...prev, role: 'JOB_SEEKER' }))}
+              onClick={() => fillDemoCredentials(formData.role)}
+              className="btn-autofill-action"
             >
-              Job Seeker
-            </button>
-            <button
-              type="button"
-              className={`role-tab ${formData.role === 'RECRUITER' ? 'active' : ''}`}
-              onClick={() => setFormData((prev) => ({ ...prev, role: 'RECRUITER' }))}
-            >
-              Recruiter
-            </button>
-            <button
-              type="button"
-              className={`role-tab ${formData.role === 'ADMIN' ? 'active' : ''}`}
-              onClick={() => setFormData((prev) => ({ ...prev, role: 'ADMIN' }))}
-            >
-              Admin
+              <Zap size={13} style={{ marginRight: 4 }} />
+              Fill {DEMO_CREDENTIALS[formData.role]?.label} Credentials
             </button>
           </div>
         </div>
@@ -171,7 +241,7 @@ const Login = () => {
             disabled={submitting}
             className="btn btn-primary btn-block btn-lg"
           >
-            {submitting ? 'Signing in...' : 'Sign In'}
+            {submitting ? 'Signing in...' : `Sign In as ${DEMO_CREDENTIALS[formData.role]?.label || 'User'}`}
             {!submitting && <ArrowRight size={18} style={{ marginLeft: 8 }} />}
           </button>
         </form>
@@ -187,7 +257,7 @@ const Login = () => {
 
         <div className="auth-security-note">
           <ShieldCheck size={14} style={{ marginRight: 6 }} />
-          <span>TalentPulse Secure Portal — Phase 1 Prototype</span>
+          <span>TalentPulse Secure Portal — Phase 2 Demo</span>
         </div>
       </div>
     </div>
@@ -195,4 +265,3 @@ const Login = () => {
 };
 
 export default Login;
-
