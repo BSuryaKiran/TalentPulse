@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { getJobById } from '../../data/jobs';
-import { addApplication, hasUserApplied, getApplications } from '../../data/applications';
-import { getProfile } from '../../data/profile';
-import JobStatusBadge from '../../components/job/JobStatusBadge';
+import applicationService from '../../services/applicationService';
+import ApplicationStatusBadge from '../../components/application/ApplicationStatusBadge';
+import ApplicationForm from '../../components/application/ApplicationForm';
 import {
   ArrowLeft,
   Building2,
@@ -14,11 +14,10 @@ import {
   Clock,
   DollarSign,
   CheckCircle,
-  Upload,
-  Send,
   CheckCircle2,
-  X,
   Share2,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
 const JobDetails = () => {
@@ -27,46 +26,43 @@ const JobDetails = () => {
   const { user } = useAuth();
 
   const [job] = useState(() => getJobById(id));
-  const [alreadyApplied, setAlreadyApplied] = useState(() => (id ? hasUserApplied(id, user?.email) : false));
-  const [existingAppStatus, setExistingAppStatus] = useState(() => {
-    if (!id) return null;
-    const apps = getApplications(user?.email);
-    const myApp = apps.find((a) => a.jobId === id);
-    return myApp ? myApp.status : null;
-  });
-
-  // Application Modal state
+  const [existingApp, setExistingApp] = useState(null);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const [coverNotes, setCoverNotes] = useState('');
-  const [resumeName, setResumeName] = useState(() => {
-    const p = getProfile(user);
-    return p?.resume?.fileName || `${(user?.name || 'My').replace(/\s+/g, '_')}_Resume_2026.pdf`;
-  });
-  const [submitting, setSubmitting] = useState(false);
   const [applicationSuccess, setApplicationSuccess] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
 
-  const handleApplySubmit = (e) => {
-    e.preventDefault();
-    if (!job) return;
+  // Sync application state on load and user switch
+  useEffect(() => {
+    let isMounted = true;
+    if (id) {
+      applicationService.getApplicationByJobId(id, user).then((app) => {
+        if (isMounted) {
+          if (app) {
+            setExistingApp(app);
+            setAlreadyApplied(true);
+          } else {
+            setExistingApp(null);
+            setAlreadyApplied(false);
+          }
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [id, user]);
 
-    setSubmitting(true);
-    setTimeout(() => {
-      const newApp = addApplication({
-        jobId: job.id,
-        jobTitle: job.title,
-        company: job.company,
-        location: job.location,
-        employmentType: job.employmentType,
-        resumeName: resumeName,
-        notes: coverNotes || 'Standard application submitted via TalentPulse portal.',
-      }, user?.email);
+  const handleApplicationSuccess = (createdApp) => {
+    setExistingApp(createdApp);
+    setAlreadyApplied(true);
+    setApplicationSuccess(true);
+  };
 
-      setSubmitting(false);
-      setAlreadyApplied(true);
-      setExistingAppStatus(newApp.status);
-      setApplicationSuccess(true);
-      setShowApplyModal(false);
-    }, 600);
+  const handleShare = () => {
+    navigator.clipboard?.writeText?.(window.location.href);
+    setShareSuccess(true);
+    setTimeout(() => setShareSuccess(false), 3000);
   };
 
   if (!job) {
@@ -93,8 +89,14 @@ const JobDetails = () => {
         </button>
 
         <div className="top-bar-actions">
+          {shareSuccess && (
+            <span className="share-feedback text-emerald text-xs flex-align-center">
+              <CheckCircle2 size={14} style={{ marginRight: 4 }} />
+              Link Copied!
+            </span>
+          )}
           <button
-            onClick={() => alert('Job link copied to clipboard!')}
+            onClick={handleShare}
             className="btn btn-outline btn-sm"
             title="Share Job"
           >
@@ -104,20 +106,32 @@ const JobDetails = () => {
         </div>
       </div>
 
+      {/* Application Success Banner */}
       {applicationSuccess && (
         <div className="alert alert-success-banner mb-4">
           <div className="alert-content">
-            <CheckCircle2 size={20} className="alert-icon" />
+            <CheckCircle2 size={22} className="alert-icon" />
             <div>
               <strong>Application Submitted Successfully!</strong>
               <p>
-                Your application for <strong>{job.title}</strong> at {job.company} has been received.
+                Your candidate profile and resume have been submitted for <strong>{job.title}</strong> at {job.company}.
               </p>
             </div>
           </div>
-          <Link to="/job-seeker/applications" className="btn btn-sm btn-primary">
-            View My Applications
-          </Link>
+          <div className="alert-actions flex-align-center gap-2">
+            {existingApp && (
+              <Link
+                to={`/job-seeker/applications/${existingApp.id}`}
+                className="btn btn-sm btn-primary"
+              >
+                <span>View Application Details</span>
+                <ChevronRight size={14} style={{ marginLeft: 4 }} />
+              </Link>
+            )}
+            <Link to="/job-seeker/applications" className="btn btn-sm btn-outline">
+              My Applications
+            </Link>
+          </div>
         </div>
       )}
 
@@ -169,17 +183,31 @@ const JobDetails = () => {
               <CheckCircle size={22} className="applied-check-icon" />
               <div className="applied-box-text">
                 <span className="applied-label">Application Status:</span>
-                <JobStatusBadge status={existingAppStatus} />
+                <ApplicationStatusBadge status={existingApp?.status || 'APPLIED'} />
               </div>
-              <Link to="/job-seeker/applications" className="btn btn-outline btn-block btn-sm mt-2">
-                Manage Applications
-              </Link>
+              {existingApp ? (
+                <Link
+                  to={`/job-seeker/applications/${existingApp.id}`}
+                  className="btn btn-primary btn-block btn-sm mt-2 flex-align-center justify-center gap-1"
+                >
+                  <span>View Application</span>
+                  <ChevronRight size={14} />
+                </Link>
+              ) : (
+                <Link
+                  to="/job-seeker/applications"
+                  className="btn btn-outline btn-block btn-sm mt-2"
+                >
+                  Manage Applications
+                </Link>
+              )}
             </div>
           ) : (
             <button
               onClick={() => setShowApplyModal(true)}
               className="btn btn-primary btn-block btn-lg apply-now-btn"
             >
+              <Sparkles size={18} style={{ marginRight: 6 }} />
               Apply Now
             </button>
           )}
@@ -261,80 +289,13 @@ const JobDetails = () => {
         </div>
       </div>
 
-      {/* Application Entry Point Modal */}
-      {showApplyModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <div>
-                <h2>Apply for {job.title}</h2>
-                <p className="modal-subtitle">{job.company} • {job.location}</p>
-              </div>
-              <button onClick={() => setShowApplyModal(false)} className="modal-close-btn">
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleApplySubmit} className="modal-body">
-              <div className="form-group mb-3">
-                <label>Resume / CV</label>
-                <div className="resume-upload-box">
-                  <Upload size={24} className="upload-icon" />
-                  <div className="upload-text">
-                    <strong>{resumeName}</strong>
-                    <span>Uploaded from profile • Mock storage</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setResumeName(`Resume_${Date.now().toString().slice(-4)}.pdf`)
-                    }
-                    className="btn btn-outline btn-sm"
-                  >
-                    Change
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-group mb-4">
-                <label htmlFor="coverNotes">Cover Note / Remarks (Optional)</label>
-                <textarea
-                  id="coverNotes"
-                  rows={4}
-                  value={coverNotes}
-                  onChange={(e) => setCoverNotes(e.target.value)}
-                  placeholder="Introduce yourself or highlight why you are a great fit for this position..."
-                  className="form-textarea"
-                />
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  onClick={() => setShowApplyModal(false)}
-                  className="btn btn-outline"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="btn btn-primary"
-                >
-                  {submitting ? (
-                    'Submitting...'
-                  ) : (
-                    <>
-                      <Send size={16} style={{ marginRight: 6 }} />
-                      Submit Application
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Application Form Modal Component */}
+      <ApplicationForm
+        job={job}
+        isOpen={showApplyModal}
+        onClose={() => setShowApplyModal(false)}
+        onSuccess={handleApplicationSuccess}
+      />
     </div>
   );
 };

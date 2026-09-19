@@ -11,6 +11,7 @@ import Dashboard from '../pages/jobseeker/Dashboard';
 import Jobs from '../pages/jobseeker/Jobs';
 import JobDetails from '../pages/jobseeker/JobDetails';
 import MyApplications from '../pages/jobseeker/MyApplications';
+import ApplicationDetails from '../pages/jobseeker/ApplicationDetails';
 import Profile from '../pages/jobseeker/Profile';
 import EditProfile from '../pages/jobseeker/EditProfile';
 
@@ -51,6 +52,7 @@ const AppRoutes = () => {
             <Route path="/job-seeker/jobs" element={<Navigate to="/jobs" replace />} />
             <Route path="/job-seeker/jobs/:id" element={<JobDetails />} />
             <Route path="/job-seeker/applications" element={<MyApplications />} />
+            <Route path="/job-seeker/applications/:id" element={<ApplicationDetails />} />
             <Route path="/job-seeker/profile" element={<Profile />} />
             <Route path="/job-seeker/profile/edit" element={<EditProfile />} />
           </Route>

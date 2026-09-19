@@ -193,7 +193,7 @@ export const saveRecruiterJob = (jobData, userOrEmail) => {
   const email = resolveRecruiterEmail(userOrEmail);
   const jobs = getRecruiterJobs(email);
 
-  let updatedJobs = [];
+  let updatedJobs;
   let savedJob = null;
 
   if (jobData.id) {

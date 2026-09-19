@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { getJobs } from '../../data/jobs';
-import { getApplications } from '../../data/applications';
-import JobStatusBadge from '../../components/job/JobStatusBadge';
+import applicationService from '../../services/applicationService';
+import ApplicationStatusBadge from '../../components/application/ApplicationStatusBadge';
 import {
   Briefcase,
   FileCheck2,
@@ -20,22 +20,30 @@ import {
 const Dashboard = () => {
   const { user } = useAuth();
   const [jobs] = useState(getJobs);
-  const [applications, setApplications] = useState(() => getApplications(user?.email));
+  const [applications, setApplications] = useState([]);
 
   // Sync applications when user changes
   useEffect(() => {
-    setApplications(getApplications(user?.email));
-  }, [user?.email]);
+    let isMounted = true;
+    applicationService.getMyApplications(user).then((apps) => {
+      if (isMounted) setApplications(apps || []);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   // Compute stat counts dynamically
   const totalJobsCount = jobs.length;
   const submittedCount = applications.length;
-  const underReviewCount = applications.filter(
-    (app) => app.status?.toUpperCase() === 'UNDER REVIEW'
-  ).length;
-  const shortlistedCount = applications.filter(
-    (app) => app.status?.toUpperCase() === 'SHORTLISTED'
-  ).length;
+  const underReviewCount = applications.filter((app) => {
+    const s = (app.status || '').toUpperCase().replace(/\s+/g, '_');
+    return s === 'UNDER_REVIEW';
+  }).length;
+  const shortlistedCount = applications.filter((app) => {
+    const s = (app.status || '').toUpperCase().replace(/\s+/g, '_');
+    return s === 'SHORTLISTED';
+  }).length;
 
   // Recent 4 jobs and recent 3 applications
   const recentJobs = jobs.slice(0, 4);
@@ -207,17 +215,21 @@ const Dashboard = () => {
                 {recentApplications.map((app) => (
                   <div key={app.id} className="recent-app-item">
                     <div className="rai-header">
-                      <h4 className="rai-title">{app.jobTitle}</h4>
-                      <JobStatusBadge status={app.status} />
+                      <h4 className="rai-title">
+                        <Link to={`/job-seeker/applications/${app.id}`} className="hover-underline">
+                          {app.jobTitle}
+                        </Link>
+                      </h4>
+                      <ApplicationStatusBadge status={app.status} />
                     </div>
-                    <p className="rai-company">{app.company}</p>
+                    <p className="rai-company">{app.companyName || app.company}</p>
                     <div className="rai-footer">
                       <span className="rai-date">
                         <Calendar size={12} style={{ marginRight: 4 }} />
                         Applied: {app.appliedDate}
                       </span>
-                      <Link to={`/jobs/${app.jobId}`} className="rai-link">
-                        Details
+                      <Link to={`/job-seeker/applications/${app.id}`} className="rai-link">
+                        View Status
                       </Link>
                     </div>
                   </div>
