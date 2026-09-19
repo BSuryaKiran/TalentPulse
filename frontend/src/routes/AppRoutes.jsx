@@ -1,16 +1,24 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import JobSeekerLayout from '../layouts/JobSeekerLayout';
+import RecruiterLayout from '../layouts/RecruiterLayout';
+
 import Landing from '../pages/Landing';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
+
 import Dashboard from '../pages/jobseeker/Dashboard';
 import Jobs from '../pages/jobseeker/Jobs';
 import JobDetails from '../pages/jobseeker/JobDetails';
 import MyApplications from '../pages/jobseeker/MyApplications';
 import Profile from '../pages/jobseeker/Profile';
 import EditProfile from '../pages/jobseeker/EditProfile';
-import RecruiterDashboard from '../pages/dashboards/RecruiterDashboard';
+
+import RecruiterDashboard from '../pages/recruiter/RecruiterDashboard';
+import RecruiterProfile from '../pages/recruiter/RecruiterProfile';
+import ManageJobs from '../pages/recruiter/ManageJobs';
+import Applicants from '../pages/recruiter/Applicants';
+
 import AdminDashboard from '../pages/dashboards/AdminDashboard';
 import ProtectedRoute from './ProtectedRoute';
 import RoleRoute from './RoleRoute';
@@ -27,8 +35,9 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* Protected Job Seeker Portal Routes using JobSeekerLayout */}
+      {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
+        {/* Protected Job Seeker Portal Routes using JobSeekerLayout */}
         <Route element={<RoleRoute allowedRoles={['JOB_SEEKER']} />}>
           <Route element={<JobSeekerLayout />}>
             <Route path="/job-seeker" element={<Navigate to="/job-seeker/dashboard" replace />} />
@@ -43,17 +52,19 @@ const AppRoutes = () => {
           </Route>
         </Route>
 
-        {/* Recruiter Workspace Placeholder */}
+        {/* Protected Recruiter Workspace Routes using RecruiterLayout */}
+        <Route element={<RoleRoute allowedRoles={['RECRUITER']} />}>
+          <Route element={<RecruiterLayout />}>
+            <Route path="/recruiter" element={<Navigate to="/recruiter/dashboard" replace />} />
+            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+            <Route path="/recruiter/jobs" element={<ManageJobs />} />
+            <Route path="/recruiter/applicants" element={<Applicants />} />
+            <Route path="/recruiter/profile" element={<RecruiterProfile />} />
+          </Route>
+        </Route>
+
+        {/* Admin Workspace Placeholder */}
         <Route element={<MainLayout />}>
-          <Route
-            path="/recruiter"
-            element={
-              <RoleRoute allowedRoles={['RECRUITER']}>
-                <RecruiterDashboard />
-              </RoleRoute>
-            }
-          />
-          {/* Admin Workspace Placeholder */}
           <Route
             path="/admin"
             element={
