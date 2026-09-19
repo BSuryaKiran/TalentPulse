@@ -6319,6 +6319,283 @@ header.jobseeker-navbar {
   border: 1px solid #c7d2fe;
 }
 
+/* =====================================================
+   APPLICANT MANAGEMENT STYLING (M2 Phase 5)
+   ===================================================== */
+.applicant-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.job-filter-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.job-filter-select-wrapper .select-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.job-filter-select {
+  padding: 0.6rem 0.85rem 0.6rem 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--surface);
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.applicant-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.applicant-avatar-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.applicant-detail-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.applicant-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.candidate-name-link {
+  font-weight: 700;
+  color: var(--text-main);
+  text-decoration: none;
+  font-size: 0.925rem;
+}
+
+.candidate-name-link:hover {
+  color: var(--tp-indigo);
+}
+
+.candidate-email-text {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+}
+
+.applied-job-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.compact-skills-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.compact-skill-badge {
+  font-size: 0.725rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.compact-skill-badge.more {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* Applicant Details Specifics */
+.applicant-header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.applicant-profile-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.applied-for-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.status-update-action-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.action-box-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-light);
+}
+
+.status-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.btn-purple-outline {
+  border: 1px solid #d8b4fe;
+  color: #6b21a8;
+  background: transparent;
+}
+.btn-purple-outline:hover { background: #f3e8ff; }
+
+.btn-success-outline {
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  background: transparent;
+}
+.btn-success-outline:hover { background: #ecfdf5; }
+
+/* Resume Section Box */
+.resume-meta-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.resume-file-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: var(--tp-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.resume-file-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.resume-filename {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.resume-sub {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+}
+
+.resume-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Timeline Experience for Candidates */
+.candidate-experience-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.timeline-exp-item {
+  padding-left: 1rem;
+  border-left: 2px solid var(--tp-indigo);
+}
+
+.exp-job-title {
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.exp-company {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--tp-indigo);
+}
+
+.exp-period {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.exp-description {
+  font-size: 0.825rem;
+  color: #475569;
+  margin-top: 0.25rem;
+}
+
+.edu-degree {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.edu-institution {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.resume-preview-modal-card {
+  max-width: 640px;
+  width: 100%;
+}
+
+.resume-mock-paper {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: var(--shadow-md);
+  text-align: left;
+}
+
+
 
 
 

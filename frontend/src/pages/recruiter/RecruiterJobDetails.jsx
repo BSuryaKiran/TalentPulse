@@ -48,7 +48,7 @@ const RecruiterJobDetails = () => {
 
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
-    type: null, // 'PUBLISH' | 'CLOSE' | 'DELETE'
+    type: null,
     title: '',
     message: '',
     confirmText: '',
@@ -195,6 +195,15 @@ const RecruiterJobDetails = () => {
             </div>
 
             <div className="job-action-buttons">
+              <Link
+                to={`/recruiter/applicants?jobId=${job.id}`}
+                className="btn btn-primary btn-sm"
+                title="View Candidates Applied to this Requisition"
+              >
+                <Users size={16} />
+                <span>View Applicants</span>
+              </Link>
+
               {job.status === 'DRAFT' && (
                 <button
                   onClick={promptPublish}

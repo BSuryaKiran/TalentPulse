@@ -6,6 +6,7 @@ import {
   getRecruiterProfile,
 } from '../../data/recruiter';
 import jobService from '../../services/jobService';
+import applicationService from '../../services/applicationService';
 import RecruiterStatCard from '../../components/recruiter/RecruiterStatCard';
 import RecruiterQuickActions from '../../components/recruiter/RecruiterQuickActions';
 import RecruiterActivity from '../../components/recruiter/RecruiterActivity';
@@ -16,17 +17,24 @@ const RecruiterDashboard = () => {
   const profile = getRecruiterProfile(user);
 
   const [jobs, setJobs] = useState([]);
+  const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    jobService
-      .getRecruiterJobs(user)
-      .then((data) => {
-        if (isMounted) setJobs(data);
+
+    Promise.all([
+      jobService.getRecruiterJobs(user),
+      applicationService.getRecruiterApplicants(user),
+    ])
+      .then(([jobData, appData]) => {
+        if (isMounted) {
+          setJobs(jobData);
+          setApplicants(appData);
+        }
       })
       .catch((err) => {
-        console.warn('Dashboard job fetch error:', err.message);
+        console.warn('Dashboard fetch error:', err.message);
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -40,11 +48,11 @@ const RecruiterDashboard = () => {
   const recruiterName = profile.fullName || user?.name || user?.email || 'Recruiter';
   const companyName = profile.companyName || 'TalentPulse Enterprise';
 
-  // Compute dynamic stats from recruiter jobs
+  // Dynamic statistics
   const activeJobsCount = jobs.filter((j) => j.status === 'ACTIVE').length;
-  const totalApplicantsCount = jobs.reduce((sum, j) => sum + (j.applicants || 0), 0);
-  const shortlistedCount = Math.round(totalApplicantsCount * 0.22);
-  const interviewsCount = Math.min(8, Math.round(shortlistedCount * 0.35));
+  const totalApplicantsCount = applicants.length;
+  const shortlistedCount = applicants.filter((a) => a.status === 'SHORTLISTED').length;
+  const selectedCount = applicants.filter((a) => a.status === 'SELECTED').length;
 
   const dynamicStats = [
     {
@@ -71,7 +79,7 @@ const RecruiterDashboard = () => {
       id: 'stat-shortlisted',
       title: 'Shortlisted',
       value: loading ? '...' : String(shortlistedCount),
-      change: '12 pending review',
+      change: `${shortlistedCount} ready for interview`,
       isPositive: true,
       icon: 'UserCheck',
       color: 'violet',
@@ -79,13 +87,13 @@ const RecruiterDashboard = () => {
     },
     {
       id: 'stat-interviews',
-      title: 'Interviews Scheduled',
-      value: loading ? '...' : String(interviewsCount),
-      change: '3 scheduled today',
+      title: 'Selected Candidates',
+      value: loading ? '...' : String(selectedCount),
+      change: `${selectedCount} offer letters extended`,
       isPositive: true,
       icon: 'Calendar',
       color: 'emerald',
-      description: 'Active interview sessions planned for this week',
+      description: 'Candidates selected for final placement',
     },
   ];
 

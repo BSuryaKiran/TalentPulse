@@ -21,6 +21,7 @@ import CreateJob from '../pages/recruiter/CreateJob';
 import EditJob from '../pages/recruiter/EditJob';
 import RecruiterJobDetails from '../pages/recruiter/RecruiterJobDetails';
 import Applicants from '../pages/recruiter/Applicants';
+import ApplicantDetails from '../pages/recruiter/ApplicantDetails';
 
 import AdminDashboard from '../pages/dashboards/AdminDashboard';
 import ProtectedRoute from './ProtectedRoute';
@@ -65,6 +66,7 @@ const AppRoutes = () => {
             <Route path="/recruiter/jobs/:id" element={<RecruiterJobDetails />} />
             <Route path="/recruiter/jobs/edit/:id" element={<EditJob />} />
             <Route path="/recruiter/applicants" element={<Applicants />} />
+            <Route path="/recruiter/applicants/:id" element={<ApplicantDetails />} />
             <Route path="/recruiter/profile" element={<RecruiterProfile />} />
           </Route>
         </Route>
