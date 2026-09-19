@@ -17,6 +17,9 @@ import EditProfile from '../pages/jobseeker/EditProfile';
 import RecruiterDashboard from '../pages/recruiter/RecruiterDashboard';
 import RecruiterProfile from '../pages/recruiter/RecruiterProfile';
 import ManageJobs from '../pages/recruiter/ManageJobs';
+import CreateJob from '../pages/recruiter/CreateJob';
+import EditJob from '../pages/recruiter/EditJob';
+import RecruiterJobDetails from '../pages/recruiter/RecruiterJobDetails';
 import Applicants from '../pages/recruiter/Applicants';
 
 import AdminDashboard from '../pages/dashboards/AdminDashboard';
@@ -58,6 +61,9 @@ const AppRoutes = () => {
             <Route path="/recruiter" element={<Navigate to="/recruiter/dashboard" replace />} />
             <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
             <Route path="/recruiter/jobs" element={<ManageJobs />} />
+            <Route path="/recruiter/jobs/create" element={<CreateJob />} />
+            <Route path="/recruiter/jobs/:id" element={<RecruiterJobDetails />} />
+            <Route path="/recruiter/jobs/edit/:id" element={<EditJob />} />
             <Route path="/recruiter/applicants" element={<Applicants />} />
             <Route path="/recruiter/profile" element={<RecruiterProfile />} />
           </Route>

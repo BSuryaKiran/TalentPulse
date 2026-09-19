@@ -1,59 +1,456 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, PlusCircle, ArrowLeft, Layers, CheckCircle2, Clock } from 'lucide-react';
+import { useAuth } from '../../context/useAuth';
+import {
+  getRecruiterJobs,
+  updateJobStatus,
+  deleteRecruiterJob,
+} from '../../data/recruiterJobs';
+import ConfirmationModal from '../../components/recruiter/ConfirmationModal';
+import {
+  PlusCircle,
+  Search,
+  Filter,
+  Briefcase,
+  CheckCircle2,
+  FileText,
+  XCircle,
+  Eye,
+  Edit,
+  Trash2,
+  PowerOff,
+  Users,
+  MapPin,
+  Calendar,
+  Layers,
+  ArrowUpDown,
+} from 'lucide-react';
 
 const ManageJobs = () => {
+  const { user } = useAuth();
+  const [jobs, setJobs] = useState(() => getRecruiterJobs(user));
+
+  // Controls
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('NEWEST');
+
+  // Confirmation modal state
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    jobId: null,
+    type: null, // 'TOGGLE_STATUS' | 'DELETE'
+    title: '',
+    message: '',
+    confirmText: '',
+    confirmVariant: 'danger',
+  });
+
+  const refreshJobs = () => {
+    setJobs(getRecruiterJobs(user));
+  };
+
+  // Compute KPI Counts
+  const kpis = useMemo(() => {
+    const total = jobs.length;
+    const active = jobs.filter((j) => j.status === 'ACTIVE').length;
+    const draft = jobs.filter((j) => j.status === 'DRAFT').length;
+    const closed = jobs.filter((j) => j.status === 'CLOSED').length;
+    return { total, active, draft, closed };
+  }, [jobs]);
+
+  // Search & Filter & Sort Pipeline
+  const filteredJobs = useMemo(() => {
+    return jobs
+      .filter((job) => {
+        // Status Filter
+        if (statusFilter !== 'ALL' && job.status !== statusFilter) {
+          return false;
+        }
+        // Search filter (title, company, location)
+        if (searchTerm.trim()) {
+          const query = searchTerm.toLowerCase();
+          const matchTitle = job.title?.toLowerCase().includes(query);
+          const matchCompany = job.company?.toLowerCase().includes(query);
+          const matchLocation = job.location?.toLowerCase().includes(query);
+          if (!matchTitle && !matchCompany && !matchLocation) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'NEWEST') {
+          return new Date(b.postedDate || 0) - new Date(a.postedDate || 0);
+        }
+        if (sortBy === 'OLDEST') {
+          return new Date(a.postedDate || 0) - new Date(b.postedDate || 0);
+        }
+        if (sortBy === 'APPLICANTS') {
+          return (b.applicants || 0) - (a.applicants || 0);
+        }
+        return 0;
+      });
+  }, [jobs, searchTerm, statusFilter, sortBy]);
+
+  // Modal Actions Triggering
+  const promptToggleStatus = (job) => {
+    const isClosed = job.status === 'CLOSED';
+    setModalConfig({
+      isOpen: true,
+      jobId: job.id,
+      type: 'TOGGLE_STATUS',
+      title: isClosed ? 'Reopen Requisition?' : 'Close Requisition?',
+      message: isClosed
+        ? `Reopening "${job.title}" will allow new candidates to apply.`
+        : `Closing "${job.title}" will stop new candidates from submitting applications.`,
+      confirmText: isClosed ? 'Reopen Requisition' : 'Close Requisition',
+      confirmVariant: isClosed ? 'primary' : 'warning',
+    });
+  };
+
+  const promptDelete = (job) => {
+    setModalConfig({
+      isOpen: true,
+      jobId: job.id,
+      type: 'DELETE',
+      title: 'Delete Job Requisition?',
+      message: `Are you sure you want to delete "${job.title}"? This action is permanent and cannot be undone.`,
+      confirmText: 'Delete Requisition',
+      confirmVariant: 'danger',
+    });
+  };
+
+  const handleModalConfirm = () => {
+    const { jobId, type } = modalConfig;
+    if (type === 'TOGGLE_STATUS') {
+      const targetJob = jobs.find((j) => j.id === jobId);
+      if (targetJob) {
+        const nextStatus = targetJob.status === 'CLOSED' ? 'ACTIVE' : 'CLOSED';
+        updateJobStatus(jobId, nextStatus, user);
+      }
+    } else if (type === 'DELETE') {
+      deleteRecruiterJob(jobId, user);
+    }
+    refreshJobs();
+    setModalConfig({ isOpen: false, jobId: null, type: null });
+  };
+
+  const renderStatusBadge = (status) => {
+    switch (status) {
+      case 'ACTIVE':
+        return <span className="badge badge-success">ACTIVE</span>;
+      case 'DRAFT':
+        return <span className="badge badge-warning">DRAFT</span>;
+      case 'CLOSED':
+        return <span className="badge badge-secondary">CLOSED</span>;
+      default:
+        return <span className="badge badge-secondary">{status}</span>;
+    }
+  };
+
   return (
-    <div className="recruiter-placeholder-page">
-      <div className="placeholder-card card">
-        <div className="placeholder-badge recruiter-badge mb-3">
-          <Briefcase size={20} />
-          <span>Recruiter Workspace &bull; Job Management</span>
+    <div className="manage-jobs-page">
+      {/* Page Header */}
+      <div className="page-header-row mb-4">
+        <div>
+          <h1 className="page-title">Manage Jobs</h1>
+          <p className="page-subtitle">
+            Create, edit, track, and manage job requisitions for your organization.
+          </p>
         </div>
+        <Link to="/recruiter/jobs/create" className="btn btn-primary">
+          <PlusCircle size={18} />
+          <span>Post New Job</span>
+        </Link>
+      </div>
 
-        <h1 className="placeholder-title">Manage Jobs</h1>
-        <p className="placeholder-description">
-          Requisition management, posting workflows, and job status management will be fully integrated in Phase 2.
-        </p>
-
-        <div className="placeholder-features-grid mt-4">
-          <div className="feature-item-card">
-            <div className="feature-icon-box">
-              <PlusCircle size={20} />
-            </div>
-            <div>
-              <h3>Requisition Creation</h3>
-              <p>Define job descriptions, salary ranges, location requirements, and skill tags.</p>
-            </div>
+      {/* Summary KPI Cards */}
+      <div className="job-summary-kpi-grid mb-4">
+        <div className="kpi-card" onClick={() => setStatusFilter('ALL')}>
+          <div className="kpi-icon-box total">
+            <Layers size={20} />
           </div>
-
-          <div className="feature-item-card">
-            <div className="feature-icon-box">
-              <Layers size={20} />
-            </div>
-            <div>
-              <h3>Pipeline Tracking</h3>
-              <p>Monitor active applicant counts per job posting and filter by candidate stage.</p>
-            </div>
-          </div>
-
-          <div className="feature-item-card">
-            <div className="feature-icon-box">
-              <Clock size={20} />
-            </div>
-            <div>
-              <h3>Listing Status</h3>
-              <p>Toggle requisitions between Active, Draft, Paused, and Closed states.</p>
-            </div>
+          <div>
+            <div className="kpi-value">{kpis.total}</div>
+            <div className="kpi-label">Total Jobs</div>
           </div>
         </div>
 
-        <div className="placeholder-footer-actions mt-4 pt-3">
-          <Link to="/recruiter/dashboard" className="btn btn-primary">
-            <ArrowLeft size={16} />
-            <span>Back to Recruiter Dashboard</span>
-          </Link>
+        <div className="kpi-card" onClick={() => setStatusFilter('ACTIVE')}>
+          <div className="kpi-icon-box active">
+            <CheckCircle2 size={20} />
+          </div>
+          <div>
+            <div className="kpi-value">{kpis.active}</div>
+            <div className="kpi-label">Active Listings</div>
+          </div>
+        </div>
+
+        <div className="kpi-card" onClick={() => setStatusFilter('DRAFT')}>
+          <div className="kpi-icon-box draft">
+            <FileText size={20} />
+          </div>
+          <div>
+            <div className="kpi-value">{kpis.draft}</div>
+            <div className="kpi-label">Draft Requisitions</div>
+          </div>
+        </div>
+
+        <div className="kpi-card" onClick={() => setStatusFilter('CLOSED')}>
+          <div className="kpi-icon-box closed">
+            <XCircle size={20} />
+          </div>
+          <div>
+            <div className="kpi-value">{kpis.closed}</div>
+            <div className="kpi-label">Closed Jobs</div>
+          </div>
         </div>
       </div>
+
+      {/* Controls Bar: Search, Status Filter & Sorting */}
+      <div className="jobs-controls-card card mb-4">
+        <div className="card-body controls-body">
+          <div className="search-input-wrapper">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search by job title, company, or location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="clear-search-btn">
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="filter-sort-group">
+            {/* Status Filter Tabs */}
+            <div className="status-filter-pills">
+              {['ALL', 'ACTIVE', 'DRAFT', 'CLOSED'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setStatusFilter(st)}
+                  className={`filter-pill ${statusFilter === st ? 'active' : ''}`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="sort-dropdown-wrapper">
+              <ArrowUpDown size={14} className="sort-icon" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="sort-select"
+              >
+                <option value="NEWEST">Newest First</option>
+                <option value="OLDEST">Oldest First</option>
+                <option value="APPLICANTS">Most Applicants</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area: Table / Cards or Empty States */}
+      {jobs.length === 0 ? (
+        /* Global Empty State: No jobs posted yet */
+        <div className="card empty-jobs-card text-center p-5">
+          <div className="empty-icon-wrapper blue mb-3">
+            <Briefcase size={36} />
+          </div>
+          <h2>No jobs posted yet</h2>
+          <p className="text-muted max-w-md mx-auto mb-4">
+            Create your first job posting to start receiving applications from top candidates.
+          </p>
+          <Link to="/recruiter/jobs/create" className="btn btn-primary">
+            <PlusCircle size={18} />
+            <span>Post New Job</span>
+          </Link>
+        </div>
+      ) : filteredJobs.length === 0 ? (
+        /* Search/Filter Empty State */
+        <div className="card empty-jobs-card text-center p-5">
+          <div className="empty-icon-wrapper gray mb-3">
+            <Search size={32} />
+          </div>
+          <h3>No matching job requisitions found</h3>
+          <p className="text-muted mb-4">
+            Try adjusting your search query or status filter criteria.
+          </p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('ALL');
+            }}
+            className="btn btn-outline btn-sm"
+          >
+            Reset Filters
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="desktop-jobs-table-card card">
+            <div className="table-responsive">
+              <table className="jobs-table">
+                <thead>
+                  <tr>
+                    <th>Job Title & Location</th>
+                    <th>Type / Mode</th>
+                    <th>Applicants</th>
+                    <th>Posted Date</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredJobs.map((job) => (
+                    <tr key={job.id}>
+                      <td>
+                        <div className="table-job-info">
+                          <Link to={`/recruiter/jobs/${job.id}`} className="job-table-title">
+                            {job.title}
+                          </Link>
+                          <div className="job-table-sub">
+                            <MapPin size={12} style={{ marginRight: 4 }} />
+                            {job.location} &bull; {job.company}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="type-badge-text">
+                          {job.employmentType} ({job.workMode || 'Hybrid'})
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="applicants-count-badge">
+                          <Users size={14} style={{ marginRight: 4 }} />
+                          <strong>{job.applicants || 0}</strong> candidates
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="date-text">{job.postedDate || '-'}</span>
+                      </td>
+
+                      <td>
+                        <span className="date-text">{job.deadline || 'Open'}</span>
+                      </td>
+
+                      <td>{renderStatusBadge(job.status)}</td>
+
+                      <td>
+                        <div className="table-actions-cell">
+                          <Link
+                            to={`/recruiter/jobs/${job.id}`}
+                            className="btn-icon-action"
+                            title="View Job Details"
+                          >
+                            <Eye size={16} />
+                          </Link>
+
+                          <Link
+                            to={`/recruiter/jobs/edit/${job.id}`}
+                            className="btn-icon-action"
+                            title="Edit Requisition"
+                          >
+                            <Edit size={16} />
+                          </Link>
+
+                          <button
+                            onClick={() => promptToggleStatus(job)}
+                            className="btn-icon-action"
+                            title={job.status === 'CLOSED' ? 'Reopen Job' : 'Close Job'}
+                          >
+                            {job.status === 'CLOSED' ? <CheckCircle2 size={16} /> : <PowerOff size={16} />}
+                          </button>
+
+                          <button
+                            onClick={() => promptDelete(job)}
+                            className="btn-icon-action danger"
+                            title="Delete Requisition"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Responsive Cards View */}
+          <div className="mobile-jobs-cards-list">
+            {filteredJobs.map((job) => (
+              <div key={job.id} className="mobile-job-card card mb-3">
+                <div className="card-body">
+                  <div className="flex-between mb-2">
+                    {renderStatusBadge(job.status)}
+                    <span className="mobile-date">{job.postedDate}</span>
+                  </div>
+
+                  <h3 className="mobile-job-title">
+                    <Link to={`/recruiter/jobs/${job.id}`}>{job.title}</Link>
+                  </h3>
+                  <p className="mobile-job-meta">
+                    {job.company} &bull; {job.location} ({job.employmentType})
+                  </p>
+
+                  <div className="mobile-applicants-row my-2">
+                    <Users size={14} style={{ marginRight: 4 }} />
+                    <span><strong>{job.applicants || 0}</strong> candidates applied</span>
+                  </div>
+
+                  <div className="mobile-card-actions pt-2 mt-2 border-top">
+                    <Link to={`/recruiter/jobs/${job.id}`} className="btn btn-outline btn-xs">
+                      <Eye size={14} />
+                      <span>View</span>
+                    </Link>
+                    <Link to={`/recruiter/jobs/edit/${job.id}`} className="btn btn-outline btn-xs">
+                      <Edit size={14} />
+                      <span>Edit</span>
+                    </Link>
+                    <button
+                      onClick={() => promptToggleStatus(job)}
+                      className="btn btn-outline btn-xs"
+                    >
+                      <PowerOff size={14} />
+                      <span>{job.status === 'CLOSED' ? 'Reopen' : 'Close'}</span>
+                    </button>
+                    <button
+                      onClick={() => promptDelete(job)}
+                      className="btn btn-danger-outline btn-xs"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        confirmVariant={modalConfig.confirmVariant}
+        onConfirm={handleModalConfirm}
+        onClose={() => setModalConfig({ isOpen: false, jobId: null, type: null })}
+      />
     </div>
   );
 };
