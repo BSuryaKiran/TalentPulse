@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import JobSeekerLayout from '../layouts/JobSeekerLayout';
 import RecruiterLayout from '../layouts/RecruiterLayout';
+import AdminLayout from '../layouts/AdminLayout';
 
 import Landing from '../pages/Landing';
 import Login from '../pages/auth/Login';
@@ -24,7 +25,13 @@ import RecruiterJobDetails from '../pages/recruiter/RecruiterJobDetails';
 import Applicants from '../pages/recruiter/Applicants';
 import ApplicantDetails from '../pages/recruiter/ApplicantDetails';
 
-import AdminDashboard from '../pages/dashboards/AdminDashboard';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import Users from '../pages/admin/Users';
+import UserDetails from '../pages/admin/UserDetails';
+import AdminJobs from '../pages/admin/AdminJobs';
+import AdminApplications from '../pages/admin/AdminApplications';
+import SystemOverview from '../pages/admin/SystemOverview';
+
 import ProtectedRoute from './ProtectedRoute';
 import RoleRoute from './RoleRoute';
 
@@ -73,16 +80,17 @@ const AppRoutes = () => {
           </Route>
         </Route>
 
-        {/* Admin Workspace Placeholder */}
-        <Route element={<MainLayout />}>
-          <Route
-            path="/admin"
-            element={
-              <RoleRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </RoleRoute>
-            }
-          />
+        {/* Protected Admin Workspace Routes using AdminLayout */}
+        <Route element={<RoleRoute allowedRoles={['ADMIN']} />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<Users />} />
+            <Route path="/admin/users/:id" element={<UserDetails />} />
+            <Route path="/admin/jobs" element={<AdminJobs />} />
+            <Route path="/admin/applications" element={<AdminApplications />} />
+            <Route path="/admin/system" element={<SystemOverview />} />
+          </Route>
         </Route>
       </Route>
 
