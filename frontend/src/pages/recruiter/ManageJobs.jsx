@@ -1,16 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
-import {
-  getRecruiterJobs,
-  updateJobStatus,
-  deleteRecruiterJob,
-} from '../../data/recruiterJobs';
+import jobService from '../../services/jobService';
 import ConfirmationModal from '../../components/recruiter/ConfirmationModal';
 import {
   PlusCircle,
   Search,
-  Filter,
   Briefcase,
   CheckCircle2,
   FileText,
@@ -21,16 +16,20 @@ import {
   PowerOff,
   Users,
   MapPin,
-  Calendar,
   Layers,
   ArrowUpDown,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 const ManageJobs = () => {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState(() => getRecruiterJobs(user));
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
 
-  // Controls
+  // Search & Filter controls
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('NEWEST');
@@ -46,9 +45,22 @@ const ManageJobs = () => {
     confirmVariant: 'danger',
   });
 
-  const refreshJobs = () => {
-    setJobs(getRecruiterJobs(user));
-  };
+  const fetchJobs = useCallback(async () => {
+    setLoading(true);
+    setApiError('');
+    try {
+      const data = await jobService.getRecruiterJobs(user);
+      setJobs(data);
+    } catch (err) {
+      setApiError(err.message || 'Failed to load job requisitions.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   // Compute KPI Counts
   const kpis = useMemo(() => {
@@ -59,15 +71,13 @@ const ManageJobs = () => {
     return { total, active, draft, closed };
   }, [jobs]);
 
-  // Search & Filter & Sort Pipeline
+  // Filter & Sort Pipeline
   const filteredJobs = useMemo(() => {
     return jobs
       .filter((job) => {
-        // Status Filter
         if (statusFilter !== 'ALL' && job.status !== statusFilter) {
           return false;
         }
-        // Search filter (title, company, location)
         if (searchTerm.trim()) {
           const query = searchTerm.toLowerCase();
           const matchTitle = job.title?.toLowerCase().includes(query);
@@ -91,7 +101,7 @@ const ManageJobs = () => {
       });
   }, [jobs, searchTerm, statusFilter, sortBy]);
 
-  // Modal Actions Triggering
+  // Modal Action Prompts
   const promptToggleStatus = (job) => {
     const isClosed = job.status === 'CLOSED';
     setModalConfig({
@@ -119,19 +129,33 @@ const ManageJobs = () => {
     });
   };
 
-  const handleModalConfirm = () => {
+  const handleModalConfirm = async () => {
     const { jobId, type } = modalConfig;
-    if (type === 'TOGGLE_STATUS') {
-      const targetJob = jobs.find((j) => j.id === jobId);
-      if (targetJob) {
-        const nextStatus = targetJob.status === 'CLOSED' ? 'ACTIVE' : 'CLOSED';
-        updateJobStatus(jobId, nextStatus, user);
-      }
-    } else if (type === 'DELETE') {
-      deleteRecruiterJob(jobId, user);
-    }
-    refreshJobs();
     setModalConfig({ isOpen: false, jobId: null, type: null });
+    setApiError('');
+    setActionSuccess('');
+
+    try {
+      if (type === 'TOGGLE_STATUS') {
+        const targetJob = jobs.find((j) => j.id === jobId);
+        if (targetJob) {
+          if (targetJob.status === 'CLOSED') {
+            await jobService.publishJob(jobId, user);
+            setActionSuccess('Job requisition reopened successfully.');
+          } else {
+            await jobService.closeJob(jobId, user);
+            setActionSuccess('Job requisition closed successfully.');
+          }
+        }
+      } else if (type === 'DELETE') {
+        await jobService.deleteJob(jobId, user);
+        setActionSuccess('Job requisition deleted successfully.');
+      }
+      fetchJobs();
+      setTimeout(() => setActionSuccess(''), 4000);
+    } catch (err) {
+      setApiError(err.message || 'Operation failed.');
+    }
   };
 
   const renderStatusBadge = (status) => {
@@ -149,7 +173,7 @@ const ManageJobs = () => {
 
   return (
     <div className="manage-jobs-page">
-      {/* Page Header */}
+      {/* Top Banner Row */}
       <div className="page-header-row mb-4">
         <div>
           <h1 className="page-title">Manage Jobs</h1>
@@ -162,6 +186,27 @@ const ManageJobs = () => {
           <span>Post New Job</span>
         </Link>
       </div>
+
+      {/* Action Notification Alert */}
+      {actionSuccess && (
+        <div className="alert alert-success mb-3 flex-align-center gap-2">
+          <CheckCircle2 size={18} />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
+
+      {/* API Error Alert */}
+      {apiError && (
+        <div className="alert alert-danger mb-3 flex-between">
+          <div className="flex-align-center gap-2">
+            <AlertCircle size={18} />
+            <span>{apiError}</span>
+          </div>
+          <button onClick={fetchJobs} className="btn btn-xs btn-outline">
+            <RefreshCw size={12} style={{ marginRight: 4 }} /> Retry
+          </button>
+        </div>
+      )}
 
       {/* Summary KPI Cards */}
       <div className="job-summary-kpi-grid mb-4">
@@ -206,7 +251,7 @@ const ManageJobs = () => {
         </div>
       </div>
 
-      {/* Controls Bar: Search, Status Filter & Sorting */}
+      {/* Search & Filter Controls */}
       <div className="jobs-controls-card card mb-4">
         <div className="card-body controls-body">
           <div className="search-input-wrapper">
@@ -226,7 +271,6 @@ const ManageJobs = () => {
           </div>
 
           <div className="filter-sort-group">
-            {/* Status Filter Tabs */}
             <div className="status-filter-pills">
               {['ALL', 'ACTIVE', 'DRAFT', 'CLOSED'].map((st) => (
                 <button
@@ -239,7 +283,6 @@ const ManageJobs = () => {
               ))}
             </div>
 
-            {/* Sort Dropdown */}
             <div className="sort-dropdown-wrapper">
               <ArrowUpDown size={14} className="sort-icon" />
               <select
@@ -256,9 +299,13 @@ const ManageJobs = () => {
         </div>
       </div>
 
-      {/* Main Content Area: Table / Cards or Empty States */}
-      {jobs.length === 0 ? (
-        /* Global Empty State: No jobs posted yet */
+      {/* Main Content: Loading State, Table / Cards, or Empty State */}
+      {loading ? (
+        <div className="card text-center p-5">
+          <div className="spinner mx-auto mb-3" />
+          <p className="text-muted">Loading jobs from Job Service...</p>
+        </div>
+      ) : jobs.length === 0 ? (
         <div className="card empty-jobs-card text-center p-5">
           <div className="empty-icon-wrapper blue mb-3">
             <Briefcase size={36} />
@@ -273,7 +320,6 @@ const ManageJobs = () => {
           </Link>
         </div>
       ) : filteredJobs.length === 0 ? (
-        /* Search/Filter Empty State */
         <div className="card empty-jobs-card text-center p-5">
           <div className="empty-icon-wrapper gray mb-3">
             <Search size={32} />
@@ -294,7 +340,7 @@ const ManageJobs = () => {
         </div>
       ) : (
         <>
-          {/* Desktop Table View */}
+          {/* Desktop Table */}
           <div className="desktop-jobs-table-card card">
             <div className="table-responsive">
               <table className="jobs-table">
@@ -389,7 +435,7 @@ const ManageJobs = () => {
             </div>
           </div>
 
-          {/* Mobile Responsive Cards View */}
+          {/* Mobile Cards */}
           <div className="mobile-jobs-cards-list">
             {filteredJobs.map((job) => (
               <div key={job.id} className="mobile-job-card card mb-3">

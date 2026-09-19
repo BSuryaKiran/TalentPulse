@@ -1,10 +1,11 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/useAuth';
 import {
   RECRUITER_QUICK_ACTIONS,
   RECRUITER_ACTIVITIES,
   getRecruiterProfile,
 } from '../../data/recruiter';
-import { getRecruiterJobs } from '../../data/recruiterJobs';
+import jobService from '../../services/jobService';
 import RecruiterStatCard from '../../components/recruiter/RecruiterStatCard';
 import RecruiterQuickActions from '../../components/recruiter/RecruiterQuickActions';
 import RecruiterActivity from '../../components/recruiter/RecruiterActivity';
@@ -13,7 +14,28 @@ import { Building2, Sparkles } from 'lucide-react';
 const RecruiterDashboard = () => {
   const { user } = useAuth();
   const profile = getRecruiterProfile(user);
-  const jobs = getRecruiterJobs(user);
+
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    jobService
+      .getRecruiterJobs(user)
+      .then((data) => {
+        if (isMounted) setJobs(data);
+      })
+      .catch((err) => {
+        console.warn('Dashboard job fetch error:', err.message);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const recruiterName = profile.fullName || user?.name || user?.email || 'Recruiter';
   const companyName = profile.companyName || 'TalentPulse Enterprise';
@@ -28,7 +50,7 @@ const RecruiterDashboard = () => {
     {
       id: 'stat-active-jobs',
       title: 'Active Jobs',
-      value: String(activeJobsCount),
+      value: loading ? '...' : String(activeJobsCount),
       change: `${activeJobsCount} requisitions open`,
       isPositive: true,
       icon: 'Briefcase',
@@ -38,7 +60,7 @@ const RecruiterDashboard = () => {
     {
       id: 'stat-applications',
       title: 'Total Applications',
-      value: String(totalApplicantsCount),
+      value: loading ? '...' : String(totalApplicantsCount),
       change: '+24 new today',
       isPositive: true,
       icon: 'Users',
@@ -48,7 +70,7 @@ const RecruiterDashboard = () => {
     {
       id: 'stat-shortlisted',
       title: 'Shortlisted',
-      value: String(shortlistedCount),
+      value: loading ? '...' : String(shortlistedCount),
       change: '12 pending review',
       isPositive: true,
       icon: 'UserCheck',
@@ -58,7 +80,7 @@ const RecruiterDashboard = () => {
     {
       id: 'stat-interviews',
       title: 'Interviews Scheduled',
-      value: String(interviewsCount),
+      value: loading ? '...' : String(interviewsCount),
       change: '3 scheduled today',
       isPositive: true,
       icon: 'Calendar',

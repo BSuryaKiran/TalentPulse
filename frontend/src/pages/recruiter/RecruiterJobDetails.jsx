@@ -1,11 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
-import {
-  getRecruiterJobById,
-  updateJobStatus,
-  deleteRecruiterJob,
-} from '../../data/recruiterJobs';
+import jobService from '../../services/jobService';
 import ConfirmationModal from '../../components/recruiter/ConfirmationModal';
 import {
   Building2,
@@ -23,6 +19,7 @@ import {
   AlertCircle,
   Sparkles,
   ListChecks,
+  Send,
 } from 'lucide-react';
 
 const getStatusBadge = (status) => {
@@ -43,22 +40,117 @@ const RecruiterJobDetails = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [job, setJob] = useState(() => getRecruiterJobById(id, user));
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
+  const [actionProcessing, setActionProcessing] = useState(false);
+
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
-    type: null,
+    type: null, // 'PUBLISH' | 'CLOSE' | 'DELETE'
+    title: '',
+    message: '',
+    confirmText: '',
+    confirmVariant: 'primary',
   });
 
-  if (!job) {
+  const loadJob = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const data = await jobService.getJobById(id, user);
+      setJob(data);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to load job requisition details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJob();
+  }, [id, user]);
+
+  const promptPublish = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'PUBLISH',
+      title: 'Publish Job Requisition?',
+      message: 'Publishing this job will transition its status to ACTIVE and make it visible to job seekers.',
+      confirmText: 'Publish Job',
+      confirmVariant: 'primary',
+    });
+  };
+
+  const promptClose = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'CLOSE',
+      title: 'Close Requisition?',
+      message: 'Closing this job requisition will prevent new candidate submissions.',
+      confirmText: 'Close Job',
+      confirmVariant: 'warning',
+    });
+  };
+
+  const promptDelete = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'DELETE',
+      title: 'Delete Job Requisition?',
+      message: 'Are you sure you want to permanently delete this job requisition? This action cannot be undone.',
+      confirmText: 'Delete Job',
+      confirmVariant: 'danger',
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    const { type } = modalConfig;
+    setModalConfig({ isOpen: false, type: null });
+    setActionProcessing(true);
+    setErrorMsg('');
+    setActionSuccess('');
+
+    try {
+      if (type === 'PUBLISH') {
+        const updated = await jobService.publishJob(id, user);
+        if (updated) setJob(updated);
+        setActionSuccess('Job published successfully!');
+      } else if (type === 'CLOSE') {
+        const updated = await jobService.closeJob(id, user);
+        if (updated) setJob(updated);
+        setActionSuccess('Job closed successfully!');
+      } else if (type === 'DELETE') {
+        await jobService.deleteJob(id, user);
+        navigate('/recruiter/jobs');
+        return;
+      }
+      setTimeout(() => setActionSuccess(''), 4000);
+    } catch (err) {
+      setErrorMsg(err.message || 'Operation failed.');
+    } finally {
+      setActionProcessing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="card max-w-xl mx-auto my-5 p-5 text-center">
+        <div className="spinner mx-auto mb-3" />
+        <p className="text-muted">Loading job details from Job Service...</p>
+      </div>
+    );
+  }
+
+  if (errorMsg && !job) {
     return (
       <div className="card empty-state-card max-w-xl mx-auto my-5 p-4 text-center">
         <div className="empty-icon-box danger mb-3">
           <AlertCircle size={32} />
         </div>
         <h2>Job Requisition Not Found</h2>
-        <p className="text-muted mb-4">
-          The requested job posting (ID: <code>{id}</code>) does not exist or may have been deleted.
-        </p>
+        <p className="text-muted mb-4">{errorMsg}</p>
         <Link to="/recruiter/jobs" className="btn btn-primary">
           <ArrowLeft size={16} />
           <span>Back to Manage Jobs</span>
@@ -67,54 +159,31 @@ const RecruiterJobDetails = () => {
     );
   }
 
-  const handleOpenCloseModal = () => {
-    const isCurrentlyClosed = job.status === 'CLOSED';
-    setModalConfig({
-      isOpen: true,
-      type: 'TOGGLE_STATUS',
-      title: isCurrentlyClosed ? 'Reopen Requisition?' : 'Close Requisition?',
-      message: isCurrentlyClosed
-        ? 'Reopening this job will make it active and allow candidate applications again.'
-        : 'Closing this job requisition will prevent new candidate submissions.',
-      confirmText: isCurrentlyClosed ? 'Reopen Job' : 'Close Job',
-      confirmVariant: isCurrentlyClosed ? 'primary' : 'warning',
-    });
-  };
-
-  const handleOpenDeleteModal = () => {
-    setModalConfig({
-      isOpen: true,
-      type: 'DELETE',
-      title: 'Delete Job Requisition?',
-      message:
-        'Are you sure you want to permanently delete this job requisition? This action cannot be undone.',
-      confirmText: 'Delete Job',
-      confirmVariant: 'danger',
-    });
-  };
-
-  const handleConfirmAction = () => {
-    if (modalConfig.type === 'TOGGLE_STATUS') {
-      const nextStatus = job.status === 'CLOSED' ? 'ACTIVE' : 'CLOSED';
-      const updated = updateJobStatus(job.id, nextStatus, user);
-      if (updated) setJob(updated);
-    } else if (modalConfig.type === 'DELETE') {
-      deleteRecruiterJob(job.id, user);
-      navigate('/recruiter/jobs');
-      return;
-    }
-    setModalConfig({ isOpen: false, type: null });
-  };
-
   return (
     <div className="job-details-page max-w-5xl mx-auto">
-      {/* Top Back Navigation Link */}
+      {/* Back Link */}
       <div className="mb-3">
         <Link to="/recruiter/jobs" className="link-back-btn">
           <ArrowLeft size={16} />
           <span>Back to Manage Jobs</span>
         </Link>
       </div>
+
+      {/* Success Notice */}
+      {actionSuccess && (
+        <div className="alert alert-success mb-3 flex-align-center gap-2">
+          <CheckCircle2 size={18} />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
+
+      {/* Action Error Alert */}
+      {errorMsg && (
+        <div className="alert alert-danger mb-3 flex-align-center gap-2">
+          <AlertCircle size={18} />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {/* Header Overview Card */}
       <div className="card job-details-header-card mb-4">
@@ -126,31 +195,49 @@ const RecruiterJobDetails = () => {
             </div>
 
             <div className="job-action-buttons">
+              {job.status === 'DRAFT' && (
+                <button
+                  onClick={promptPublish}
+                  disabled={actionProcessing}
+                  className="btn btn-primary btn-sm"
+                >
+                  <Send size={16} />
+                  <span>Publish</span>
+                </button>
+              )}
+
               <Link to={`/recruiter/jobs/edit/${job.id}`} className="btn btn-outline btn-sm">
                 <Edit size={16} />
                 <span>Edit</span>
               </Link>
 
-              <button
-                onClick={handleOpenCloseModal}
-                className={`btn btn-sm ${
-                  job.status === 'CLOSED' ? 'btn-secondary' : 'btn-warning-outline'
-                }`}
-              >
-                {job.status === 'CLOSED' ? (
-                  <>
-                    <CheckCircle2 size={16} />
-                    <span>Reopen</span>
-                  </>
-                ) : (
-                  <>
-                    <PowerOff size={16} />
-                    <span>Close</span>
-                  </>
-                )}
-              </button>
+              {job.status === 'ACTIVE' && (
+                <button
+                  onClick={promptClose}
+                  disabled={actionProcessing}
+                  className="btn btn-warning-outline btn-sm"
+                >
+                  <PowerOff size={16} />
+                  <span>Close</span>
+                </button>
+              )}
 
-              <button onClick={handleOpenDeleteModal} className="btn btn-danger-outline btn-sm">
+              {job.status === 'CLOSED' && (
+                <button
+                  onClick={promptPublish}
+                  disabled={actionProcessing}
+                  className="btn btn-secondary btn-sm"
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Reopen</span>
+                </button>
+              )}
+
+              <button
+                onClick={promptDelete}
+                disabled={actionProcessing}
+                className="btn btn-danger-outline btn-sm"
+              >
                 <Trash2 size={16} />
                 <span>Delete</span>
               </button>
@@ -215,9 +302,9 @@ const RecruiterJobDetails = () => {
         </div>
       </div>
 
-      {/* Main Details Body */}
+      {/* Main Details Grid */}
       <div className="job-details-sections-grid">
-        {/* Left Column: Description, Responsibilities, Qualifications */}
+        {/* Left Column */}
         <div className="left-details-column">
           <div className="card mb-4">
             <div className="card-header">
@@ -262,7 +349,7 @@ const RecruiterJobDetails = () => {
           )}
         </div>
 
-        {/* Right Column: Skills, Benefits */}
+        {/* Right Column */}
         <div className="right-details-column">
           <div className="card mb-4">
             <div className="card-header">
@@ -303,7 +390,7 @@ const RecruiterJobDetails = () => {
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
+      {/* Action Modal */}
       <ConfirmationModal
         isOpen={modalConfig.isOpen}
         title={modalConfig.title}
