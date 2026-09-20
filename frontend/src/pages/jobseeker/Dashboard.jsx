@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { getJobs } from '../../data/jobs';
+import jobService from '../../services/jobService';
 import applicationService from '../../services/applicationService';
 import ApplicationStatusBadge from '../../components/application/ApplicationStatusBadge';
 import {
@@ -19,8 +20,21 @@ import {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [jobs] = useState(getJobs);
+  const [jobs, setJobs] = useState(getJobs);
   const [applications, setApplications] = useState([]);
+
+  // Sync jobs from Job Service / Gateway
+  useEffect(() => {
+    let isMounted = true;
+    jobService.getJobs().then((liveJobs) => {
+      if (isMounted && liveJobs && liveJobs.length > 0) {
+        setJobs(liveJobs);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Sync applications when user changes
   useEffect(() => {

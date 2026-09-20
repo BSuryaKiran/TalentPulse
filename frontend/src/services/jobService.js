@@ -1,4 +1,4 @@
-import api from './api';
+import api, { formatApiError } from './api';
 import {
   getRecruiterJobs as getMockRecruiterJobs,
   getRecruiterJobById as getMockRecruiterJobById,
@@ -6,9 +6,7 @@ import {
   deleteRecruiterJob as deleteMockRecruiterJob,
   updateJobStatus as updateMockJobStatus,
 } from '../data/recruiterJobs';
-
-const JOB_SERVICE_BASE_URL =
-  import.meta.env.VITE_JOB_SERVICE_URL || 'http://localhost:8083';
+import { INITIAL_JOBS } from '../data/jobs';
 
 /**
  * Extract recruiter identity from Auth user context
@@ -73,7 +71,9 @@ export const mapJobFromBackend = (data) => {
     workMode: formatEnum(data.workMode),
     location: data.location || '',
     experience: data.experience || '',
+    experienceLevel: data.experience || '2–5 Years',
     salary: data.salary || '',
+    salaryRange: data.salary || '',
     deadline: data.applicationDeadline || data.deadline || '',
     applicationDeadline: data.applicationDeadline || data.deadline || '',
     skills: Array.isArray(data.requiredSkills)
@@ -123,30 +123,6 @@ export const mapJobToBackend = (jobData, userOrEmail) => {
 };
 
 /**
- * Format API errors into user-friendly error messages
- */
-export const formatErrorMessage = (error) => {
-  if (!error.response) {
-    return 'Unable to connect to the Job Service. Please check that the backend microservice is running on port 8083.';
-  }
-  const status = error.response.status;
-  const data = error.response.data;
-
-  if (status === 401) return 'Your session has expired. Please sign in again.';
-  if (status === 403) return 'You are not authorized to perform this action.';
-  if (status === 404) return data?.message || 'Job requisition not found.';
-  if (status === 400) {
-    if (data?.fieldErrors) {
-      const firstErr = Object.values(data.fieldErrors)[0];
-      return firstErr || data.message || 'Invalid job input parameters.';
-    }
-    return data?.message || 'Invalid input data provided.';
-  }
-  if (status === 500) return 'Something went wrong on the server. Please try again.';
-  return data?.message || 'An unexpected error occurred.';
-};
-
-/**
  * Helper to construct headers with recruiter identity
  */
 const getAuthHeaders = (userOrEmail) => {
@@ -160,17 +136,32 @@ const getAuthHeaders = (userOrEmail) => {
 
 export const jobService = {
   /**
-   * GET /jobs (Public active jobs for candidates)
+   * GET /jobs (Public active jobs for candidates via API Gateway)
    */
   async getJobs() {
     try {
-      const response = await api.get('/jobs', {
-        baseURL: JOB_SERVICE_BASE_URL,
-      });
+      const response = await api.get('/jobs');
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        return response.data.map(mapJobFromBackend);
+      }
+      // If backend database is empty in dev, return initial default jobs
+      return (INITIAL_JOBS || []).map(mapJobFromBackend);
+    } catch (error) {
+      console.warn('Job Service API unreachable via Gateway, using local fallback:', error.message);
+      return (INITIAL_JOBS || []).map(mapJobFromBackend);
+    }
+  },
+
+  /**
+   * GET /jobs/all (Admin / platform-wide jobs via API Gateway)
+   */
+  async getAllJobs() {
+    try {
+      const response = await api.get('/jobs/all');
       return response.data.map(mapJobFromBackend);
     } catch (error) {
-      console.warn('Job Service offline, returning empty active list:', error.message);
-      return [];
+      console.warn('Job Service /jobs/all call failed, using fallback:', error.message);
+      return (INITIAL_JOBS || []).map(mapJobFromBackend);
     }
   },
 
@@ -180,17 +171,18 @@ export const jobService = {
   async getJobById(id, userOrEmail) {
     try {
       const response = await api.get(`/jobs/${id}`, {
-        baseURL: JOB_SERVICE_BASE_URL,
         headers: getAuthHeaders(userOrEmail),
       });
       return mapJobFromBackend(response.data);
     } catch (error) {
       if (error.response) {
-        throw new Error(formatErrorMessage(error));
+        throw new Error(formatApiError(error, 'Job requisition not found.'));
       }
       // Fallback check mock dataset if backend not running during dev preview
       const localMock = getMockRecruiterJobById(id, userOrEmail);
       if (localMock) return localMock;
+      const initialMatch = (INITIAL_JOBS || []).find((j) => String(j.id) === String(id));
+      if (initialMatch) return mapJobFromBackend(initialMatch);
       throw new Error('Unable to connect to Job Service.');
     }
   },
@@ -202,14 +194,12 @@ export const jobService = {
     const { email } = resolveRecruiterIdentity(userOrEmail);
     try {
       const response = await api.get('/jobs/recruiter', {
-        baseURL: JOB_SERVICE_BASE_URL,
         params: { email },
         headers: getAuthHeaders(userOrEmail),
       });
       return response.data.map(mapJobFromBackend);
     } catch (error) {
       console.warn('Job Service API call failed, using local mock data:', error.message);
-      // Dev fallback to local mock data if Job Service is not running
       const mockJobs = getMockRecruiterJobs(userOrEmail);
       return mockJobs;
     }
@@ -222,17 +212,14 @@ export const jobService = {
     const payload = mapJobToBackend(jobData, userOrEmail);
     try {
       const response = await api.post('/jobs', payload, {
-        baseURL: JOB_SERVICE_BASE_URL,
         headers: getAuthHeaders(userOrEmail),
       });
-      // Also update mock storage for sync
       saveMockRecruiterJob(mapJobFromBackend(response.data), userOrEmail);
       return mapJobFromBackend(response.data);
     } catch (error) {
       if (error.response) {
-        throw new Error(formatErrorMessage(error));
+        throw new Error(formatApiError(error, 'Failed to create job requisition.'));
       }
-      // Dev fallback
       const savedMock = saveMockRecruiterJob(jobData, userOrEmail);
       return savedMock;
     }
@@ -245,14 +232,13 @@ export const jobService = {
     const payload = mapJobToBackend(jobData, userOrEmail);
     try {
       const response = await api.put(`/jobs/${id}`, payload, {
-        baseURL: JOB_SERVICE_BASE_URL,
         headers: getAuthHeaders(userOrEmail),
       });
       saveMockRecruiterJob(mapJobFromBackend(response.data), userOrEmail);
       return mapJobFromBackend(response.data);
     } catch (error) {
       if (error.response) {
-        throw new Error(formatErrorMessage(error));
+        throw new Error(formatApiError(error, 'Failed to update job requisition.'));
       }
       const savedMock = saveMockRecruiterJob({ ...jobData, id }, userOrEmail);
       return savedMock;
@@ -265,14 +251,13 @@ export const jobService = {
   async publishJob(id, userOrEmail) {
     try {
       const response = await api.patch(`/jobs/${id}/publish`, null, {
-        baseURL: JOB_SERVICE_BASE_URL,
         headers: getAuthHeaders(userOrEmail),
       });
       updateMockJobStatus(id, 'ACTIVE', userOrEmail);
       return mapJobFromBackend(response.data);
     } catch (error) {
       if (error.response) {
-        throw new Error(formatErrorMessage(error));
+        throw new Error(formatApiError(error, 'Failed to publish job requisition.'));
       }
       updateMockJobStatus(id, 'ACTIVE', userOrEmail);
       return { id, status: 'ACTIVE' };
@@ -285,14 +270,13 @@ export const jobService = {
   async closeJob(id, userOrEmail) {
     try {
       const response = await api.patch(`/jobs/${id}/close`, null, {
-        baseURL: JOB_SERVICE_BASE_URL,
         headers: getAuthHeaders(userOrEmail),
       });
       updateMockJobStatus(id, 'CLOSED', userOrEmail);
       return mapJobFromBackend(response.data);
     } catch (error) {
       if (error.response) {
-        throw new Error(formatErrorMessage(error));
+        throw new Error(formatApiError(error, 'Failed to close job requisition.'));
       }
       updateMockJobStatus(id, 'CLOSED', userOrEmail);
       return { id, status: 'CLOSED' };
@@ -305,14 +289,13 @@ export const jobService = {
   async deleteJob(id, userOrEmail) {
     try {
       await api.delete(`/jobs/${id}`, {
-        baseURL: JOB_SERVICE_BASE_URL,
         headers: getAuthHeaders(userOrEmail),
       });
       deleteMockRecruiterJob(id, userOrEmail);
       return true;
     } catch (error) {
       if (error.response) {
-        throw new Error(formatErrorMessage(error));
+        throw new Error(formatApiError(error, 'Failed to delete job requisition.'));
       }
       deleteMockRecruiterJob(id, userOrEmail);
       return true;
@@ -321,3 +304,4 @@ export const jobService = {
 };
 
 export default jobService;
+

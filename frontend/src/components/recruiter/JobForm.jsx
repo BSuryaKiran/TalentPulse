@@ -6,13 +6,8 @@ import {
   XCircle,
   Briefcase,
   Building2,
-  MapPin,
-  Calendar,
-  DollarSign,
-  FileText,
   ListChecks,
   Sparkles,
-  Layers,
 } from 'lucide-react';
 
 const JobForm = ({ initialValues = {}, onSubmit, isEditing = false }) => {

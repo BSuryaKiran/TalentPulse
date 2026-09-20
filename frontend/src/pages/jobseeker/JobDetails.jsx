@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { getJobById } from '../../data/jobs';
+import jobService from '../../services/jobService';
 import applicationService from '../../services/applicationService';
 import ApplicationStatusBadge from '../../components/application/ApplicationStatusBadge';
 import ApplicationForm from '../../components/application/ApplicationForm';
@@ -25,12 +26,27 @@ const JobDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [job] = useState(() => getJobById(id));
+  const [job, setJob] = useState(() => getJobById(id));
   const [existingApp, setExistingApp] = useState(null);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applicationSuccess, setApplicationSuccess] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+
+  // Sync job from Job Service / Gateway
+  useEffect(() => {
+    let isMounted = true;
+    if (id) {
+      jobService.getJobById(id, user).then((res) => {
+        if (isMounted && res) {
+          setJob(res);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [id, user]);
 
   // Sync application state on load and user switch
   useEffect(() => {

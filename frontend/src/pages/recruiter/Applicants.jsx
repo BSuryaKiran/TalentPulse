@@ -7,16 +7,11 @@ import ApplicantStatusBadge from '../../components/recruiter/ApplicantStatusBadg
 import {
   Users,
   Search,
-  Filter,
   UserCheck,
   Briefcase,
-  CheckCircle2,
-  XCircle,
   Eye,
   FileText,
   Clock,
-  MapPin,
-  Layers,
   Award,
 } from 'lucide-react';
 

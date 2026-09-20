@@ -1,14 +1,27 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getJobs } from '../../data/jobs';
+import jobService from '../../services/jobService';
 import JobCard from '../../components/job/JobCard';
 import JobSearch from '../../components/job/JobSearch';
 import JobFilter from '../../components/job/JobFilter';
 import { Briefcase, SlidersHorizontal, RotateCcw } from 'lucide-react';
 
 const Jobs = () => {
-  const [jobs] = useState(getJobs);
+  const [jobs, setJobs] = useState(getJobs);
   const [searchTerm, setSearchTerm] = useState('');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    jobService.getJobs().then((liveJobs) => {
+      if (isMounted && liveJobs && liveJobs.length > 0) {
+        setJobs(liveJobs);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Filter state
   const [filters, setFilters] = useState({

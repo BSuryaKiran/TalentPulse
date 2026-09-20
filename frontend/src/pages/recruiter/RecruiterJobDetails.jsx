@@ -55,21 +55,25 @@ const RecruiterJobDetails = () => {
     confirmVariant: 'primary',
   });
 
-  const loadJob = async () => {
+  useEffect(() => {
+    let isMounted = true;
     setLoading(true);
     setErrorMsg('');
-    try {
-      const data = await jobService.getJobById(id, user);
-      setJob(data);
-    } catch (err) {
-      setErrorMsg(err.message || 'Failed to load job requisition details.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    jobService
+      .getJobById(id, user)
+      .then((data) => {
+        if (isMounted) setJob(data);
+      })
+      .catch((err) => {
+        if (isMounted) setErrorMsg(err.message || 'Failed to load job requisition details.');
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
-  useEffect(() => {
-    loadJob();
+    return () => {
+      isMounted = false;
+    };
   }, [id, user]);
 
   const promptPublish = () => {

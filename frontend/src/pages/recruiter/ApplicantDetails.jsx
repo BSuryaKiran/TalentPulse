@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import applicationService from '../../services/applicationService';
 import ApplicantStatusBadge from '../../components/recruiter/ApplicantStatusBadge';
@@ -8,7 +8,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar,
   Briefcase,
   GraduationCap,
   FileText,
@@ -16,11 +15,7 @@ import {
   Eye,
   CheckCircle2,
   AlertCircle,
-  UserCheck,
-  Award,
   XCircle,
-  Clock,
-  Sparkles,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -34,7 +29,6 @@ const STATUS_OPTIONS = [
 const ApplicantDetails = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const [applicant, setApplicant] = useState(null);
   const [loading, setLoading] = useState(true);
