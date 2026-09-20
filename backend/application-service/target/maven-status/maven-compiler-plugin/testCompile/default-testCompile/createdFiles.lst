@@ -1,0 +1,3 @@
+com\talentpulse\application\ApplicationServiceApplicationTests.class
+com\talentpulse\application\service\ApplicationServiceTest.class
+com\talentpulse\application\controller\ApplicationControllerTest.class
