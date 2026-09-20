@@ -1,0 +1,5 @@
+# Created at 2026-09-20T21:53:59.451
+Boot Manifest-JAR contains absolute paths in classpath 'E:\TalentPulse\backend\job-service\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+

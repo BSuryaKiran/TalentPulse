@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.talentpulse.gateway.ApiGatewayApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.750 s -- in com.talentpulse.gateway.ApiGatewayApplicationTests
