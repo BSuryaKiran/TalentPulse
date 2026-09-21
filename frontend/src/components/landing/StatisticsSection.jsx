@@ -1,4 +1,4 @@
-import { Info, Briefcase, Users, Building2, CheckCircle2 } from 'lucide-react';
+import { Briefcase, Users, Building2, CheckCircle2 } from 'lucide-react';
 
 const StatisticsSection = () => {
   const stats = [
@@ -33,10 +33,6 @@ const StatisticsSection = () => {
       <div className="section-header text-center">
         <span className="section-subtitle">Platform Metrics</span>
         <h2 className="section-title">Empowering Modern Recruitment at Scale</h2>
-        <div className="demo-notice-pill">
-          <Info size={14} style={{ marginRight: 6 }} />
-          <span>UI Demonstration Values Only</span>
-        </div>
       </div>
 
       <div className="stats-grid">

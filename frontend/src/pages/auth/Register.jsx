@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import {
   Eye,
   EyeOff,
@@ -113,6 +114,9 @@ const Register = () => {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <div className="auth-card-top-bar">
+          <ThemeToggle />
+        </div>
         <div className="auth-header">
           <div className="auth-brand-badge">
             <Briefcase size={28} />

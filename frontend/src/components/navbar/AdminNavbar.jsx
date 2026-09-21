@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
+import ThemeToggle from '../common/ThemeToggle';
 import { Briefcase, LogOut, Menu, Shield, Server } from 'lucide-react';
 
 const AdminNavbar = ({ onToggleSidebar }) => {
@@ -52,6 +53,8 @@ const AdminNavbar = ({ onToggleSidebar }) => {
             <span className="user-name-display">{user.name || user.email}</span>
           </div>
         )}
+
+        <ThemeToggle />
 
         <button
           onClick={handleLogout}

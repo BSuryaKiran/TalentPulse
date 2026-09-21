@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
+import ThemeToggle from '../../components/common/ThemeToggle';
 import {
   Eye,
   EyeOff,
@@ -9,35 +10,7 @@ import {
   Briefcase,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  UserCheck,
-  Building2,
-  Shield,
 } from 'lucide-react';
-
-const DEMO_CREDENTIALS = {
-  JOB_SEEKER: {
-    email: 'seeker@talentpulse.com',
-    password: 'password123',
-    role: 'JOB_SEEKER',
-    label: 'Job Seeker',
-    icon: <UserCheck size={16} />,
-  },
-  RECRUITER: {
-    email: 'recruiter@talentpulse.com',
-    password: 'password123',
-    role: 'RECRUITER',
-    label: 'Recruiter',
-    icon: <Building2 size={16} />,
-  },
-  ADMIN: {
-    email: 'admin@talentpulse.com',
-    password: 'password123',
-    role: 'ADMIN',
-    label: 'Admin',
-    icon: <Shield size={16} />,
-  },
-};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -45,26 +18,14 @@ const Login = () => {
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
-    email: 'seeker@talentpulse.com',
-    password: 'password123',
+    email: '',
+    password: '',
     role: 'JOB_SEEKER',
   });
 
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  const fillDemoCredentials = (roleKey) => {
-    const creds = DEMO_CREDENTIALS[roleKey];
-    if (creds) {
-      setFormData({
-        email: creds.email,
-        password: creds.password,
-        role: creds.role,
-      });
-      setErrors({});
-    }
-  };
 
   const validate = () => {
     const newErrors = {};
@@ -132,62 +93,15 @@ const Login = () => {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <div className="auth-card-top-bar">
+          <ThemeToggle />
+        </div>
         <div className="auth-header">
           <div className="auth-brand-badge">
             <Briefcase size={28} />
           </div>
           <h2>Welcome to TalentPulse</h2>
           <p className="auth-subtitle">Sign in to your enterprise account</p>
-        </div>
-
-        {/* Demo Credentials Section */}
-        <div className="role-selector-group">
-          <div className="demo-header-row">
-            <span className="role-selector-label">Auto-Fill Demo Credentials:</span>
-            <span className="demo-badge">
-              <Zap size={12} style={{ marginRight: 4 }} />
-              Quick Demo
-            </span>
-          </div>
-
-          <div className="role-tabs">
-            {Object.keys(DEMO_CREDENTIALS).map((key) => {
-              const cred = DEMO_CREDENTIALS[key];
-              const isActive = formData.role === cred.role;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => fillDemoCredentials(key)}
-                  className={`role-tab ${isActive ? 'active' : ''}`}
-                  title={`Click to fill demo credentials for ${cred.label}`}
-                >
-                  <span className="tab-icon">{cred.icon}</span>
-                  <span>{cred.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Quick Demo Credentials Info Card */}
-          <div className="demo-creds-preview">
-            <div className="dcp-row">
-              <span className="dcp-label">Demo Email:</span>
-              <span className="dcp-value">{DEMO_CREDENTIALS[formData.role]?.email}</span>
-            </div>
-            <div className="dcp-row">
-              <span className="dcp-label">Demo Password:</span>
-              <span className="dcp-value">{DEMO_CREDENTIALS[formData.role]?.password}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => fillDemoCredentials(formData.role)}
-              className="btn-autofill-action"
-            >
-              <Zap size={13} style={{ marginRight: 4 }} />
-              Fill {DEMO_CREDENTIALS[formData.role]?.label} Credentials
-            </button>
-          </div>
         </div>
 
         {errors.general && (
@@ -244,7 +158,7 @@ const Login = () => {
             disabled={submitting}
             className="btn btn-primary btn-block btn-lg"
           >
-            {submitting ? 'Signing in...' : `Sign In as ${DEMO_CREDENTIALS[formData.role]?.label || 'User'}`}
+            {submitting ? 'Signing in...' : 'Sign In'}
             {!submitting && <ArrowRight size={18} style={{ marginLeft: 8 }} />}
           </button>
         </form>

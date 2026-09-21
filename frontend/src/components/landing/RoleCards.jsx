@@ -1,6 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/useAuth';
-import { UserCheck, Building2, Shield, CheckCircle, Zap, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { UserCheck, Building2, Shield, CheckCircle, ArrowRight } from 'lucide-react';
 
 const ROLES = [
   {
@@ -10,8 +9,8 @@ const ROLES = [
       'Create your candidate profile, browse thousands of verified enterprise opportunities, apply in one click, and track every application status in real time.',
     icon: <UserCheck size={24} />,
     cardClass: 'role-card-seeker',
-    email: 'seeker@talentpulse.com',
-    targetPath: '/job-seeker/dashboard',
+    targetPath: '/register',
+    btnText: 'Get Started as Candidate',
     features: ['Build professional profile', 'Discover relevant jobs', 'One-click applications', 'Real-time status tracking'],
   },
   {
@@ -21,8 +20,8 @@ const ROLES = [
       'Post and manage job requisitions, review applicants with rich candidate profiles, and move talent through your hiring pipeline efficiently.',
     icon: <Building2 size={24} />,
     cardClass: 'role-card-recruiter',
-    email: 'recruiter@talentpulse.com',
-    targetPath: '/recruiter',
+    targetPath: '/register',
+    btnText: 'Hire Enterprise Talent',
     features: ['Create & publish job posts', 'Manage active requisitions', 'Review candidate profiles', 'Pipeline management'],
   },
   {
@@ -32,25 +31,13 @@ const ROLES = [
       'Oversee the entire platform — manage users, monitor all job listings and applications, enforce role-based access policies, and ensure governance.',
     icon: <Shield size={24} />,
     cardClass: 'role-card-admin',
-    email: 'admin@talentpulse.com',
-    targetPath: '/admin',
+    targetPath: '/login',
+    btnText: 'Access Admin Portal',
     features: ['User & role management', 'Monitor all job listings', 'Application analytics', 'Platform governance'],
   },
 ];
 
 const RoleCards = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
-  const handleDemo = async (email, path) => {
-    try {
-      await login(email, 'password123');
-      navigate(path, { replace: true });
-    } catch (err) {
-      console.error('Role demo login error:', err);
-    }
-  };
-
   return (
     <section id="roles" className="nexstep-roles-section">
       <div className="nexstep-section-container text-center">
@@ -78,15 +65,13 @@ const RoleCards = () => {
                 ))}
               </ul>
 
-              <button
-                type="button"
-                onClick={() => handleDemo(role.email, role.targetPath)}
+              <Link
+                to={role.targetPath}
                 className="role-demo-btn"
               >
-                <Zap size={13} />
-                <span>Test {role.title} Demo</span>
+                <span>{role.btnText}</span>
                 <ArrowRight size={13} style={{ marginLeft: 'auto' }} />
-              </button>
+              </Link>
             </div>
           ))}
         </div>

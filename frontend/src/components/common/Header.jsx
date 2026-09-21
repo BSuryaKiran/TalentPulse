@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
+import ThemeToggle from './ThemeToggle';
 import { Briefcase, LogOut, UserCheck } from 'lucide-react';
 
 const Header = () => {
@@ -43,6 +44,7 @@ const Header = () => {
                 {user.role ? user.role.replace('_', ' ') : 'USER'}
               </span>
               <span className="user-email">{user.email}</span>
+              <ThemeToggle />
               <button
                 onClick={handleLogout}
                 className="btn btn-outline btn-sm"
@@ -54,6 +56,7 @@ const Header = () => {
             </div>
           ) : (
             <div className="auth-nav">
+              <ThemeToggle />
               <Link to="/login" className="btn btn-ghost btn-sm">
                 Sign In
               </Link>
