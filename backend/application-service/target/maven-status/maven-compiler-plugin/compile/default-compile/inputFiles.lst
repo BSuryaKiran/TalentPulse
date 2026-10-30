@@ -1,5 +1,6 @@
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\ApplicationServiceApplication.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\config\CorsConfig.java
+E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\config\OpenAPIConfig.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\controller\ApplicationController.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\dto\ApplicationResponse.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\dto\CreateApplicationRequest.java
@@ -12,5 +13,11 @@ E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\applica
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\exception\ResourceNotFoundException.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\exception\UnauthorizedApplicationAccessException.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\repository\ApplicationRepository.java
+E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\security\JwtAuthenticationFilter.java
+E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\security\JwtService.java
+E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\security\RestAccessDeniedHandler.java
+E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\security\RestAuthenticationEntryPoint.java
+E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\security\SecurityConfig.java
+E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\security\UserPrincipal.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\service\ApplicationService.java
 E:\TalentPulse\backend\application-service\src\main\java\com\talentpulse\application\service\impl\ApplicationServiceImpl.java

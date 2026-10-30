@@ -30,11 +30,18 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public JobResponse createJob(CreateJobRequest request, String recruiterEmail, Long recruiterId) {
-        String effectiveEmail = (recruiterEmail != null && !recruiterEmail.trim().isEmpty())
-                ? recruiterEmail.trim().toLowerCase()
-                : (request.getRecruiterEmail() != null ? request.getRecruiterEmail().trim().toLowerCase() : "recruiter@talentpulse.com");
+        com.talentpulse.job.security.UserPrincipal principal = com.talentpulse.job.security.UserPrincipal.getAuthenticatedPrincipal();
+        String effectiveEmail = (principal != null)
+                ? principal.getEmail()
+                : (recruiterEmail != null && !recruiterEmail.trim().isEmpty() ? recruiterEmail.trim().toLowerCase() : request.getRecruiterEmail());
 
-        Long effectiveId = (recruiterId != null) ? recruiterId : request.getRecruiterId();
+        Long effectiveId = (principal != null && principal.getUserId() != null)
+                ? principal.getUserId()
+                : (recruiterId != null ? recruiterId : request.getRecruiterId());
+
+        if (effectiveEmail == null || effectiveEmail.trim().isEmpty()) {
+            throw new UnauthorizedJobAccessException("Authenticated recruiter identity is required to post a job.");
+        }
 
         Job job = new Job();
         job.setTitle(request.getTitle());
@@ -93,20 +100,26 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional(readOnly = true)
     public List<JobResponse> getRecruiterJobs(String recruiterEmail, Long recruiterId) {
-        if (recruiterEmail != null && !recruiterEmail.trim().isEmpty()) {
-            return jobRepository.findByRecruiterEmail(recruiterEmail.trim().toLowerCase()).stream()
+        com.talentpulse.job.security.UserPrincipal principal = com.talentpulse.job.security.UserPrincipal.getAuthenticatedPrincipal();
+        boolean isAdmin = principal != null && "ADMIN".equalsIgnoreCase(principal.getRole());
+
+        String effectiveEmail = (!isAdmin && principal != null) ? principal.getEmail() : recruiterEmail;
+        Long effectiveId = (!isAdmin && principal != null && principal.getUserId() != null) ? principal.getUserId() : recruiterId;
+
+        if (effectiveEmail != null && !effectiveEmail.trim().isEmpty()) {
+            return jobRepository.findByRecruiterEmail(effectiveEmail.trim().toLowerCase()).stream()
                     .map(JobResponse::fromEntity)
                     .collect(Collectors.toList());
         }
-        if (recruiterId != null) {
-            return jobRepository.findByRecruiterId(recruiterId).stream()
+        if (effectiveId != null) {
+            return jobRepository.findByRecruiterId(effectiveId).stream()
                     .map(JobResponse::fromEntity)
                     .collect(Collectors.toList());
         }
-        // Fallback default recruiter demo email
-        return jobRepository.findByRecruiterEmail("recruiter@talentpulse.com").stream()
-                .map(JobResponse::fromEntity)
-                .collect(Collectors.toList());
+        if (isAdmin) {
+            return getAllJobs();
+        }
+        return java.util.Collections.emptyList();
     }
 
     @Override
@@ -174,19 +187,26 @@ public class JobServiceImpl implements JobService {
     }
 
     private void verifyOwnership(Job job, String requesterEmail, Long requesterId) {
-        // Dev / Gateway header check for recruiter ownership
-        if (requesterEmail != null && !requesterEmail.trim().isEmpty()) {
-            if (!job.getRecruiterEmail().equalsIgnoreCase(requesterEmail.trim())) {
-                throw new UnauthorizedJobAccessException("You do not have permission to modify this job requisition.");
-            }
-            return;
+        com.talentpulse.job.security.UserPrincipal principal = com.talentpulse.job.security.UserPrincipal.getAuthenticatedPrincipal();
+        if (principal != null && "ADMIN".equalsIgnoreCase(principal.getRole())) {
+            return; // Admins have platform-wide modification authorization
         }
-        if (requesterId != null && job.getRecruiterId() != null) {
-            if (!job.getRecruiterId().equals(requesterId)) {
-                throw new UnauthorizedJobAccessException("You do not have permission to modify this job requisition.");
-            }
+
+        String effectiveEmail = (principal != null) ? principal.getEmail() : requesterEmail;
+        Long effectiveId = (principal != null && principal.getUserId() != null) ? principal.getUserId() : requesterId;
+
+        if (effectiveEmail == null && effectiveId == null) {
+            throw new UnauthorizedJobAccessException("Authentication is required to modify this job requisition.");
         }
-        // In development without security headers set, default to allow if not explicitly mismatched
+
+        boolean emailMatches = effectiveEmail != null && job.getRecruiterEmail() != null
+                && job.getRecruiterEmail().equalsIgnoreCase(effectiveEmail.trim());
+        boolean idMatches = effectiveId != null && job.getRecruiterId() != null
+                && job.getRecruiterId().equals(effectiveId);
+
+        if (!emailMatches && !idMatches) {
+            throw new UnauthorizedJobAccessException("You do not have permission to modify this job requisition.");
+        }
     }
 
     private void validatePublishRequirements(Job job) {

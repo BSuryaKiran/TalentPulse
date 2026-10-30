@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.talentpulse.application.ApplicationSecurityTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.218 s -- in com.talentpulse.application.ApplicationSecurityTest

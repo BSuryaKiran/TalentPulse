@@ -1,4 +1,5 @@
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\config\CorsConfig.java
+E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\config\OpenAPIConfig.java
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\controller\JobController.java
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\dto\CreateJobRequest.java
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\dto\JobResponse.java
@@ -13,5 +14,11 @@ E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\exception\R
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\exception\UnauthorizedJobAccessException.java
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\JobServiceApplication.java
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\repository\JobRepository.java
+E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\security\JwtAuthenticationFilter.java
+E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\security\JwtService.java
+E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\security\RestAccessDeniedHandler.java
+E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\security\RestAuthenticationEntryPoint.java
+E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\security\SecurityConfig.java
+E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\security\UserPrincipal.java
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\service\impl\JobServiceImpl.java
 E:\TalentPulse\backend\job-service\src\main\java\com\talentpulse\job\service\JobService.java

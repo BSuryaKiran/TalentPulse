@@ -1,9 +1,13 @@
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\AuthServiceApplication.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\config\OpenAPIConfig.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\controller\AuthController.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\controller\ProfileController.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\AuthResponse.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\LoginRequest.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\RegisterRequest.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\UpdateProfileRequest.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\UserDto.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\dto\UserProfileDto.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\entity\Role.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\entity\User.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\exception\GlobalExceptionHandler.java
@@ -12,5 +16,9 @@ E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\exception
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\repository\UserRepository.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\JwtAuthenticationFilter.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\JwtService.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\RestAccessDeniedHandler.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\RestAuthenticationEntryPoint.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\SecurityConfig.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\security\UserPrincipal.java
 E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\service\AuthService.java
+E:\TalentPulse\backend\auth-service\src\main\java\com\talentpulse\auth\service\ProfileService.java

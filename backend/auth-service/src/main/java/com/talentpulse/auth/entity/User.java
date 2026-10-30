@@ -26,6 +26,18 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column
+    private String phone;
+
+    @Column
+    private String location;
+
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    @Column(columnDefinition = "TEXT")
+    private String skills;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -82,6 +94,38 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public String getSkills() {
+        return skills;
+    }
+
+    public void setSkills(String skills) {
+        this.skills = skills;
     }
 
     public LocalDateTime getCreatedAt() {

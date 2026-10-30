@@ -1,7 +1,7 @@
 package com.talentpulse.application.service.impl;
 
-import com.talentpulse.application.dto.CreateApplicationRequest;
 import com.talentpulse.application.dto.ApplicationResponse;
+import com.talentpulse.application.dto.CreateApplicationRequest;
 import com.talentpulse.application.dto.UpdateApplicationStatusRequest;
 import com.talentpulse.application.entity.Application;
 import com.talentpulse.application.entity.ApplicationStatus;
@@ -9,11 +9,13 @@ import com.talentpulse.application.exception.DuplicateApplicationException;
 import com.talentpulse.application.exception.ResourceNotFoundException;
 import com.talentpulse.application.exception.UnauthorizedApplicationAccessException;
 import com.talentpulse.application.repository.ApplicationRepository;
+import com.talentpulse.application.security.UserPrincipal;
 import com.talentpulse.application.service.ApplicationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,11 +31,16 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public ApplicationResponse createApplication(CreateApplicationRequest request, String candidateEmail, Long candidateId) {
-        String effectiveEmail = (candidateEmail != null && !candidateEmail.trim().isEmpty())
-                ? candidateEmail.trim().toLowerCase()
-                : (request.getCandidateEmail() != null ? request.getCandidateEmail().trim().toLowerCase() : null);
+        UserPrincipal principal = UserPrincipal.getAuthenticatedPrincipal();
+        boolean isAdmin = principal != null && "ADMIN".equalsIgnoreCase(principal.getRole());
 
-        Long effectiveCandidateId = (candidateId != null) ? candidateId : request.getCandidateId();
+        String effectiveEmail = (!isAdmin && principal != null)
+                ? principal.getEmail()
+                : (candidateEmail != null && !candidateEmail.trim().isEmpty() ? candidateEmail.trim().toLowerCase() : (request.getCandidateEmail() != null ? request.getCandidateEmail().trim().toLowerCase() : null));
+
+        Long effectiveCandidateId = (!isAdmin && principal != null && principal.getUserId() != null)
+                ? principal.getUserId()
+                : (candidateId != null ? candidateId : request.getCandidateId());
 
         if (effectiveCandidateId == null) {
             throw new IllegalArgumentException("Candidate ID is required to create an application.");
@@ -66,7 +73,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setResumeReference(request.getResumeReference());
         application.setCoverLetter(request.getCoverLetter());
         application.setNotes(request.getNotes());
-        
+
         // System-managed fields: Initial status = APPLIED, appliedDate = current timestamp
         application.setStatus(ApplicationStatus.APPLIED);
         application.setAppliedDate(LocalDateTime.now());
@@ -79,30 +86,54 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Transactional(readOnly = true)
     public ApplicationResponse getApplicationById(Long id) {
         Application application = findApplicationEntityById(id);
+
+        UserPrincipal principal = UserPrincipal.getAuthenticatedPrincipal();
+        if (principal != null) {
+            boolean isAdmin = "ADMIN".equalsIgnoreCase(principal.getRole());
+            boolean isCandidateOwner = application.getCandidateEmail() != null
+                    && application.getCandidateEmail().equalsIgnoreCase(principal.getEmail());
+            boolean isCandidateIdMatch = principal.getUserId() != null && application.getCandidateId() != null
+                    && application.getCandidateId().equals(principal.getUserId());
+            boolean isRecruiterOwner = application.getRecruiterEmail() != null
+                    && application.getRecruiterEmail().equalsIgnoreCase(principal.getEmail());
+            boolean isRecruiterIdMatch = principal.getUserId() != null && application.getRecruiterId() != null
+                    && application.getRecruiterId().equals(principal.getUserId());
+
+            if (!isAdmin && !isCandidateOwner && !isCandidateIdMatch && !isRecruiterOwner && !isRecruiterIdMatch) {
+                throw new UnauthorizedApplicationAccessException("You do not have permission to view this application.");
+            }
+        }
+
         return ApplicationResponse.fromEntity(application);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ApplicationResponse> getCandidateApplications(Long candidateId, String candidateEmail, ApplicationStatus status) {
-        List<Application> applications;
+        UserPrincipal principal = UserPrincipal.getAuthenticatedPrincipal();
+        boolean isAdmin = principal != null && "ADMIN".equalsIgnoreCase(principal.getRole());
 
-        if (candidateId != null) {
+        String effectiveEmail = (!isAdmin && principal != null) ? principal.getEmail() : candidateEmail;
+        Long effectiveId = (!isAdmin && principal != null && principal.getUserId() != null) ? principal.getUserId() : candidateId;
+
+        List<Application> applications;
+        if (effectiveId != null) {
             if (status != null) {
-                applications = applicationRepository.findByCandidateIdAndStatus(candidateId, status);
+                applications = applicationRepository.findByCandidateIdAndStatus(effectiveId, status);
             } else {
-                applications = applicationRepository.findByCandidateId(candidateId);
+                applications = applicationRepository.findByCandidateId(effectiveId);
             }
-        } else if (candidateEmail != null && !candidateEmail.trim().isEmpty()) {
-            String email = candidateEmail.trim().toLowerCase();
+        } else if (effectiveEmail != null && !effectiveEmail.trim().isEmpty()) {
+            String email = effectiveEmail.trim().toLowerCase();
             if (status != null) {
                 applications = applicationRepository.findByCandidateEmailAndStatus(email, status);
             } else {
                 applications = applicationRepository.findByCandidateEmail(email);
             }
-        } else {
-            // Default fallback for demo / empty query
+        } else if (isAdmin) {
             applications = applicationRepository.findAll();
+        } else {
+            applications = Collections.emptyList();
         }
 
         return applications.stream()
@@ -113,24 +144,30 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     @Transactional(readOnly = true)
     public List<ApplicationResponse> getRecruiterApplications(Long recruiterId, String recruiterEmail, ApplicationStatus status) {
-        List<Application> applications;
+        UserPrincipal principal = UserPrincipal.getAuthenticatedPrincipal();
+        boolean isAdmin = principal != null && "ADMIN".equalsIgnoreCase(principal.getRole());
 
-        if (recruiterId != null) {
+        String effectiveEmail = (!isAdmin && principal != null) ? principal.getEmail() : recruiterEmail;
+        Long effectiveId = (!isAdmin && principal != null && principal.getUserId() != null) ? principal.getUserId() : recruiterId;
+
+        List<Application> applications;
+        if (effectiveId != null) {
             if (status != null) {
-                applications = applicationRepository.findByRecruiterIdAndStatus(recruiterId, status);
+                applications = applicationRepository.findByRecruiterIdAndStatus(effectiveId, status);
             } else {
-                applications = applicationRepository.findByRecruiterId(recruiterId);
+                applications = applicationRepository.findByRecruiterId(effectiveId);
             }
-        } else if (recruiterEmail != null && !recruiterEmail.trim().isEmpty()) {
-            String email = recruiterEmail.trim().toLowerCase();
+        } else if (effectiveEmail != null && !effectiveEmail.trim().isEmpty()) {
+            String email = effectiveEmail.trim().toLowerCase();
             if (status != null) {
                 applications = applicationRepository.findByRecruiterEmailAndStatus(email, status);
             } else {
                 applications = applicationRepository.findByRecruiterEmail(email);
             }
-        } else {
-            // Default fallback
+        } else if (isAdmin) {
             applications = applicationRepository.findAll();
+        } else {
+            applications = Collections.emptyList();
         }
 
         return applications.stream()
@@ -192,16 +229,25 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     private void verifyRecruiterOwnership(Application application, String requesterEmail, Long requesterId) {
-        if (requesterEmail != null && !requesterEmail.trim().isEmpty() && application.getRecruiterEmail() != null) {
-            if (!application.getRecruiterEmail().equalsIgnoreCase(requesterEmail.trim())) {
-                throw new UnauthorizedApplicationAccessException("You do not have permission to modify this application.");
-            }
-            return;
+        UserPrincipal principal = UserPrincipal.getAuthenticatedPrincipal();
+        if (principal != null && "ADMIN".equalsIgnoreCase(principal.getRole())) {
+            return; // Admins have platform-wide modification authorization
         }
-        if (requesterId != null && application.getRecruiterId() != null) {
-            if (!application.getRecruiterId().equals(requesterId)) {
-                throw new UnauthorizedApplicationAccessException("You do not have permission to modify this application.");
-            }
+
+        String effectiveEmail = (principal != null) ? principal.getEmail() : requesterEmail;
+        Long effectiveId = (principal != null && principal.getUserId() != null) ? principal.getUserId() : requesterId;
+
+        if (effectiveEmail == null && effectiveId == null) {
+            throw new UnauthorizedApplicationAccessException("Authentication is required to perform this action.");
+        }
+
+        boolean emailMatches = effectiveEmail != null && application.getRecruiterEmail() != null
+                && application.getRecruiterEmail().equalsIgnoreCase(effectiveEmail.trim());
+        boolean idMatches = effectiveId != null && application.getRecruiterId() != null
+                && application.getRecruiterId().equals(effectiveId);
+
+        if (!emailMatches && !idMatches) {
+            throw new UnauthorizedApplicationAccessException("You do not have permission to modify this application.");
         }
     }
 }
