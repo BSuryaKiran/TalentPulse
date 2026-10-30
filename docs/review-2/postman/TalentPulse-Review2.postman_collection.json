@@ -1,0 +1,939 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-talentpulse-rev2",
+    "name": "TalentPulse-Review2",
+    "description": "Comprehensive Manual and Automated Postman API Collection for TalentPulse Review-2 Microservices Integration & JWT Security Hardening.\nAll requests target the Spring Cloud API Gateway (Default: http://localhost:8080).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Auth Service",
+      "item": [
+        {
+          "name": "1.1 Register Job Seeker",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Alex Morgan\",\n  \"email\": \"{{jobSeekerEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"role\": \"JOB_SEEKER\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/register",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "1.2 Register Recruiter",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Sarah Connor\",\n  \"email\": \"{{recruiterEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"role\": \"RECRUITER\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/register",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "1.3 Login Job Seeker",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    pm.environment.set('jobSeekerToken', data.token);",
+                  "    pm.environment.set('candidateId', data.userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{jobSeekerEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.4 Login Recruiter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    pm.environment.set('recruiterToken', data.token);",
+                  "    pm.environment.set('recruiterId', data.userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{recruiterEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.5 Login Admin (Preconfigured)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    pm.environment.set('adminToken', data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.6 Get Current User (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/me",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "1.7 Invalid Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{jobSeekerEmail}}\",\n  \"password\": \"WrongPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.8 Missing Token Protected Endpoint (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/me",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "1.9 Invalid Token Protected Endpoint (401)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer not.a.valid.jwt.token" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/me",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "1.10 Expired Token Protected Endpoint (401)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHRlc3QuY29tIiwiZXhwIjoxNjAwMDAwMDAwfQ.invalid_sig" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/me",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Profile Service",
+      "item": [
+        {
+          "name": "2.1 Retrieve Own Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/profiles/{{candidateId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["profiles", "{{candidateId}}"]
+            }
+          }
+        },
+        {
+          "name": "2.2 Update Own Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Alex Morgan\",\n  \"phone\": \"+1-555-0199\",\n  \"location\": \"San Francisco, CA\",\n  \"summary\": \"Senior Cloud Engineer with 6+ years experience in microservices and Kubernetes.\",\n  \"skills\": [\"Java\", \"Spring Boot\", \"Docker\", \"Kubernetes\", \"React\"]\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/profiles/{{candidateId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["profiles", "{{candidateId}}"]
+            }
+          }
+        },
+        {
+          "name": "2.3 Retrieve Another User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/profiles/{{recruiterId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["profiles", "{{recruiterId}}"]
+            }
+          }
+        },
+        {
+          "name": "2.4 Attempt Update Another User Profile (403)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Hacked Name\",\n  \"phone\": \"+1-000-0000\",\n  \"location\": \"Remote\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/profiles/{{recruiterId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["profiles", "{{recruiterId}}"]
+            }
+          }
+        },
+        {
+          "name": "2.5 Profile Request without JWT (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/profiles/{{candidateId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["profiles", "{{candidateId}}"]
+            }
+          }
+        },
+        {
+          "name": "2.6 Profile Request with Invalid JWT (401)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer invalid_token" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/profiles/{{candidateId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["profiles", "{{candidateId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Job Service",
+      "item": [
+        {
+          "name": "3.1 Create Draft Job as Recruiter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var data = pm.response.json();",
+                  "    pm.environment.set('jobId', data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Principal Backend Engineer\",\n  \"companyName\": \"CloudScale Inc\",\n  \"description\": \"Lead high-throughput distributed microservice development.\",\n  \"employmentType\": \"Full-time\",\n  \"workMode\": \"Hybrid\",\n  \"location\": \"Austin, TX\",\n  \"experience\": \"5+ years\",\n  \"salary\": \"$160,000 - $190,000\",\n  \"applicationDeadline\": \"2026-12-31\",\n  \"status\": \"DRAFT\",\n  \"requiredSkills\": [\"Java\", \"Spring Boot\", \"MySQL\", \"Kafka\"]\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        },
+        {
+          "name": "3.2 Create Active Job as Recruiter",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior React Developer\",\n  \"companyName\": \"CloudScale Inc\",\n  \"description\": \"Build modern responsive UI using React, Vite, and Tailwind.\",\n  \"employmentType\": \"Full-time\",\n  \"workMode\": \"Remote\",\n  \"location\": \"Remote\",\n  \"experience\": \"3+ years\",\n  \"salary\": \"$130,000 - $150,000\",\n  \"applicationDeadline\": \"2026-11-30\",\n  \"status\": \"ACTIVE\",\n  \"requiredSkills\": [\"React\", \"Vite\", \"JavaScript\", \"CSS\"]\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        },
+        {
+          "name": "3.3 Retrieve Active Jobs (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        },
+        {
+          "name": "3.4 Retrieve Job by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.5 Retrieve Recruiter's Own Jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/my-jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "my-jobs"]
+            }
+          }
+        },
+        {
+          "name": "3.6 Update Own Job",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Principal Backend Architect\",\n  \"companyName\": \"CloudScale Inc\",\n  \"description\": \"Architect resilient cloud microservices.\",\n  \"employmentType\": \"Full-time\",\n  \"workMode\": \"Remote\",\n  \"location\": \"Austin, TX\",\n  \"salary\": \"$170,000 - $200,000\",\n  \"applicationDeadline\": \"2026-12-31\",\n  \"status\": \"DRAFT\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.7 Publish Own Draft Job",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}/publish",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "3.8 Close Own Active Job",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}/close",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}", "close"]
+            }
+          }
+        },
+        {
+          "name": "3.9 Delete Own Job",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.10 Attempt Job Creation as Job Seeker (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Unauthorized Job\",\n  \"companyName\": \"Malicious Corp\",\n  \"description\": \"Attempt by candidate\",\n  \"employmentType\": \"Full-time\",\n  \"workMode\": \"Remote\",\n  \"location\": \"Remote\",\n  \"applicationDeadline\": \"2026-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        },
+        {
+          "name": "3.11 Attempt Job Modification as Job Seeker (403)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Modified by Seeker\",\n  \"companyName\": \"CloudScale Inc\",\n  \"description\": \"Unauthorized\",\n  \"employmentType\": \"Full-time\",\n  \"workMode\": \"Remote\",\n  \"location\": \"Remote\",\n  \"applicationDeadline\": \"2026-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.12 Attempt Edit Another Recruiter's Job (403)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hijacked Job\",\n  \"companyName\": \"Hacked\",\n  \"description\": \"Hijacked\",\n  \"employmentType\": \"Full-time\",\n  \"workMode\": \"Remote\",\n  \"location\": \"Remote\",\n  \"applicationDeadline\": \"2026-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.13 Attempt Delete Another Recruiter's Job (403)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.14 Attempt Close Another Recruiter's Job (403)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/{{jobId}}/close",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "{{jobId}}", "close"]
+            }
+          }
+        },
+        {
+          "name": "3.15 Request Invalid Job ID (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/999999",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "999999"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Application Service",
+      "item": [
+        {
+          "name": "4.1 Submit Application as Job Seeker",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var data = pm.response.json();",
+                  "    pm.environment.set('applicationId', data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": {{jobId}},\n  \"jobTitle\": \"Principal Backend Engineer\",\n  \"companyName\": \"CloudScale Inc\",\n  \"candidateName\": \"Alex Morgan\",\n  \"candidatePhone\": \"+1-555-0199\",\n  \"resumeUrl\": \"https://example.com/resumes/alex_morgan.pdf\",\n  \"coverLetter\": \"Excited to apply for the Principal Engineer position.\",\n  \"recruiterId\": {{recruiterId}},\n  \"recruiterEmail\": \"{{recruiterEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications"]
+            }
+          }
+        },
+        {
+          "name": "4.2 Retrieve Own Applications as Candidate",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/candidate",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "candidate"]
+            }
+          }
+        },
+        {
+          "name": "4.3 Retrieve Application Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/{{applicationId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "4.4 Submit Duplicate Application (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": {{jobId}},\n  \"jobTitle\": \"Principal Backend Engineer\",\n  \"companyName\": \"CloudScale Inc\",\n  \"candidateName\": \"Alex Morgan\",\n  \"candidatePhone\": \"+1-555-0199\",\n  \"resumeUrl\": \"https://example.com/resumes/alex_morgan.pdf\",\n  \"coverLetter\": \"Second application attempt.\",\n  \"recruiterId\": {{recruiterId}},\n  \"recruiterEmail\": \"{{recruiterEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications"]
+            }
+          }
+        },
+        {
+          "name": "4.5 Retrieve Applications for Recruiter's Jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/recruiter",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "recruiter"]
+            }
+          }
+        },
+        {
+          "name": "4.6 Retrieve Applications for Specific Job",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/job/{{jobId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "job", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "4.7 Update Application Status as Authorized Recruiter",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHORTLISTED\",\n  \"notes\": \"Strong system design and microservice background. Proceed to technical round.\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/{{applicationId}}/status",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "{{applicationId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "4.8 Attempt Status Update as Job Seeker (403)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SELECTED\",\n  \"notes\": \"Self-selection attempt\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/{{applicationId}}/status",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "{{applicationId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "4.9 Attempt View Another Candidate's Application (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/9999",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "9999"]
+            }
+          }
+        },
+        {
+          "name": "4.10 Attempt Access Another Recruiter's Applications (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/recruiter",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "recruiter"]
+            }
+          }
+        },
+        {
+          "name": "4.11 Attempt Update Another Recruiter's Applicant Status (403)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REJECTED\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/{{applicationId}}/status",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "{{applicationId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "4.12 Request Invalid Application ID (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/999999",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "999999"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Gateway Integration",
+      "item": [
+        {
+          "name": "5.1 Route to Auth Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{jobSeekerEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "5.2 Route to Profile Service",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/profiles/{{candidateId}}",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["profiles", "{{candidateId}}"]
+            }
+          }
+        },
+        {
+          "name": "5.3 Route to Job Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        },
+        {
+          "name": "5.4 Route to Application Service",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/candidate",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "candidate"]
+            }
+          }
+        },
+        {
+          "name": "5.5 Verify CORS Preflight (OPTIONS /jobs)",
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              { "key": "Origin", "value": "http://localhost:5173" },
+              { "key": "Access-Control-Request-Method", "value": "POST" },
+              { "key": "Access-Control-Request-Headers", "value": "authorization,content-type" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Negative Security Tests",
+      "item": [
+        {
+          "name": "6.1 Register Attempting ADMIN Role (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Attacker\",\n  \"email\": \"attacker@talentpulse.com\",\n  \"password\": \"Hacker123!\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/register",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "6.2 Job Seeker Accessing Admin Endpoint (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jobSeekerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/all",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "all"]
+            }
+          }
+        },
+        {
+          "name": "6.3 Recruiter Accessing Admin Endpoint (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{recruiterToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/all",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "all"]
+            }
+          }
+        },
+        {
+          "name": "6.4 Access Protected Route with Tampered Signature (401)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlckBleGFtcGxlLmNvbSIsInJvbGUiOiJBRE1JTiJ9.TAMPERED_SIGNATURE" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/jobs/my-jobs",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["jobs", "my-jobs"]
+            }
+          }
+        },
+        {
+          "name": "6.5 Access Protected Route Without Authorization Header (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/applications/candidate",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["applications", "candidate"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
